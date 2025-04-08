@@ -1,0 +1,12 @@
+env: "local"
+rpc:
+  address: ":50051"
+database:
+  uri: "321"
+  max_cons: 1
+logging:
+  level: "debug"
+otp:
+  algorithm: "SHA1"
+  digits: 6
+  period: 30
