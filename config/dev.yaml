@@ -1,0 +1,2 @@
+env: "dev"
+token_ttl: 12h
