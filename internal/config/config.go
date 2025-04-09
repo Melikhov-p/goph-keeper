@@ -16,8 +16,9 @@ type RPCConfig struct {
 
 // DatabaseConfig структура конфига для базы данных.
 type DatabaseConfig struct {
-	URI     string `yaml:"uri" env:"GK_DATABASE_URI" env-required:"true"`
-	MaxCons int    `yaml:"max_cons" env:"GK_DATABASE_MAX_CONS" env-default:"20"`
+	URI                 string `yaml:"uri" env:"GK_DATABASE_URI" env-required:"true"`
+	ExternalStoragePath string `yaml:"external_storage_path" env-required:"true"`
+	MaxCons             int    `yaml:"max_cons" env:"GK_DATABASE_MAX_CONS" env-default:"20"`
 }
 
 // LoggingConfig структура конфига для логгера.

@@ -3,6 +3,7 @@ rpc:
   address: ":50051"
 database:
   uri: "321"
+  external_storage_path: "C:\Users\melik\GolandProjects\goph-keeper\external_store"
   max_cons: 1
 logging:
   level: "debug"
