@@ -7,6 +7,7 @@ type Config struct {
 	Database DatabaseConfig `yaml:"database" env-required:"true"`
 	Logging  LoggingConfig  `yaml:"logging" env-required:"false"`
 	OTP      OTPConfig      `yaml:"otp"`
+	Security SecurityConfig `yaml:"security"`
 }
 
 // RPCConfig структура конфига для RPC сервера.
@@ -26,6 +27,11 @@ type LoggingConfig struct {
 	Level string `yaml:"level" env:"GK_LOGGING_LEVEL" env-default:"info"`
 }
 
+type SecurityConfig struct {
+	Pepper string `yaml:"pepper" env-required:"true"`
+}
+
+// OTPConfig структура конфига для OTP паролей.
 type OTPConfig struct {
 	Algorithm string `yaml:"algorithm" env-default:"SHA1"`
 	Digits    int    `yaml:"digits" env-default:"6"`
