@@ -4,14 +4,15 @@
 // 	protoc        v5.29.1
 // source: internal/api/proto/gophkeeper.proto
 
-package pb
+package gen
 
 import (
+	reflect "reflect"
+	sync "sync"
+
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
-	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -395,16 +396,18 @@ func file_internal_api_proto_gophkeeper_proto_rawDescGZIP() []byte {
 	return file_internal_api_proto_gophkeeper_proto_rawDescData
 }
 
-var file_internal_api_proto_gophkeeper_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
-var file_internal_api_proto_gophkeeper_proto_goTypes = []any{
-	(*User)(nil),                 // 0: gophkeeper.v1.User
-	(*RegisterUserRequest)(nil),  // 1: gophkeeper.v1.RegisterUserRequest
-	(*RegisterUserResponse)(nil), // 2: gophkeeper.v1.RegisterUserResponse
-	(*LoginUserRequest)(nil),     // 3: gophkeeper.v1.LoginUserRequest
-	(*LoginUserResponse)(nil),    // 4: gophkeeper.v1.LoginUserResponse
-	(*UpdateUserRequest)(nil),    // 5: gophkeeper.v1.UpdateUserRequest
-	(*emptypb.Empty)(nil),        // 6: google.protobuf.Empty
-}
+var (
+	file_internal_api_proto_gophkeeper_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+	file_internal_api_proto_gophkeeper_proto_goTypes  = []any{
+		(*User)(nil),                 // 0: gophkeeper.v1.User
+		(*RegisterUserRequest)(nil),  // 1: gophkeeper.v1.RegisterUserRequest
+		(*RegisterUserResponse)(nil), // 2: gophkeeper.v1.RegisterUserResponse
+		(*LoginUserRequest)(nil),     // 3: gophkeeper.v1.LoginUserRequest
+		(*LoginUserResponse)(nil),    // 4: gophkeeper.v1.LoginUserResponse
+		(*UpdateUserRequest)(nil),    // 5: gophkeeper.v1.UpdateUserRequest
+		(*emptypb.Empty)(nil),        // 6: google.protobuf.Empty
+	}
+)
 var file_internal_api_proto_gophkeeper_proto_depIdxs = []int32{
 	0, // 0: gophkeeper.v1.RegisterUserResponse.user:type_name -> gophkeeper.v1.User
 	0, // 1: gophkeeper.v1.LoginUserResponse.user:type_name -> gophkeeper.v1.User

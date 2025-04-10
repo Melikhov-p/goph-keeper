@@ -2,11 +2,10 @@
 package app
 
 import (
-	"context"
 	"fmt"
 	"net"
 
-	pb "github.com/Melikhov-p/goph-keeper/internal/api/proto"
+	pb "github.com/Melikhov-p/goph-keeper/internal/api/gen"
 	"github.com/Melikhov-p/goph-keeper/internal/config"
 	"github.com/Melikhov-p/goph-keeper/internal/domain/user"
 	"github.com/Melikhov-p/goph-keeper/internal/logger"
@@ -30,7 +29,7 @@ type App struct {
 }
 
 // New создание нового приложения.
-func New(ctx context.Context, cfg *config.Config) (*App, error) {
+func New(cfg *config.Config) (*App, error) {
 	op := "app.New"
 	app := App{}
 	app.Cfg = cfg

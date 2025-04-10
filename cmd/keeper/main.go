@@ -55,7 +55,7 @@ func run() error {
 		log.Fatal("failed to gracefully shutdown the service")
 	})
 
-	app, err = application.New(ctx, cfg)
+	app, err = application.New(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to get app %w", err)
 	}
