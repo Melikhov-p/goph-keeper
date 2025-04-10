@@ -86,35 +86,3 @@ type PasswordData struct {
 	NotesEncrypted string
 	MetaData       []byte
 }
-
-func NewPasswordSecret(
-	userID int,
-	name, username, password, pepper, url, notes string,
-	meta []byte,
-) (*Secret, *PasswordData, error) {
-	op := "domain.Secret.NewPasswordSecret"
-
-	var (
-		secret    *Secret
-		passData  *PasswordData
-		passHash  []byte
-		notesHash []byte
-		err       error
-	)
-
-	if username == "" || password == "" {
-		return nil, nil, fmt.Errorf("%s: username and password are required", op)
-	}
-
-	secret, err = NewSecret(userID, name, TypePassword)
-	if err != nil {
-		return nil, nil, fmt.Errorf("%s: failed to get new domain model of secret %w", op, err)
-	}
-
-	passData = &PasswordData{
-		SecretID:      secret.ID,
-		Username:      username,
-		PassEncrypted: password, // TODO: зашифровать пароль
-		URL:           url,
-	}
-}

@@ -4,6 +4,7 @@ rpc:
 database:
   uri: "321"
   external_storage_path: "C:\Users\melik\GolandProjects\goph-keeper\external_store"
+  migrations_path: "C:\Users\melik\GolandProjects\goph-keeper\internal\repository\migrations"
   max_cons: 1
 logging:
   level: "debug"

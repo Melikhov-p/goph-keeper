@@ -19,6 +19,7 @@ type RPCConfig struct {
 type DatabaseConfig struct {
 	URI                 string `yaml:"uri" env:"GK_DATABASE_URI" env-required:"true"`
 	ExternalStoragePath string `yaml:"external_storage_path" env-required:"true"`
+	MigrationsPath      string `yaml:"migrations_path" env:"GK_DATABASE_MIGRATIONS_PATH" env-required:"true"`
 	MaxCons             int    `yaml:"max_cons" env:"GK_DATABASE_MAX_CONS" env-default:"20"`
 }
 
