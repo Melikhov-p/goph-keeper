@@ -1,3 +1,4 @@
+// Package postgres пакет с имплементацией интерфейсов репозиториев через БД Postgres.
 package postgres
 
 import (
@@ -5,10 +6,11 @@ import (
 	"fmt"
 
 	"github.com/Melikhov-p/goph-keeper/internal/config"
-	_ "github.com/jackc/pgx"
+	_ "github.com/jackc/pgx" // Импорт драйвера для postgres.
 	"github.com/pressly/goose"
 )
 
+// NewConnection установка соединения с базой данных.
 func NewConnection(cfg *config.Config) (*sql.DB, error) {
 	op := "repository.Postgres.ConnectDB"
 
@@ -28,6 +30,7 @@ func NewConnection(cfg *config.Config) (*sql.DB, error) {
 	return db, nil
 }
 
+// makeMigrations выполнение миграций через goose.
 func makeMigrations(cfg *config.Config, db *sql.DB) error {
 	op := "repository.Potsgres.makeMigrations"
 

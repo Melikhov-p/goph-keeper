@@ -7,6 +7,7 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
+// Load загрузка конфига.
 func Load() (*Config, error) {
 	op := "config.loader"
 	var (

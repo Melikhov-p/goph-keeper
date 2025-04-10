@@ -70,7 +70,7 @@ func (ur *UserRepository) GetByLogin(ctx context.Context, login string) (*user.U
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, user.ErrNotFound
 		}
-		return nil, fmt.Errorf("%s: error scanning row for user (%d) %w", op, login, err)
+		return nil, fmt.Errorf("%s: error scanning row for user (%s) %w", op, login, err)
 	}
 	u.Login = login
 

@@ -1,3 +1,4 @@
+// Package app пакет с описанием приложения
 package app
 
 import (

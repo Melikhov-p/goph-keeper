@@ -1,3 +1,4 @@
+// Package user пакет уровня доменов пользователя.
 package user
 
 import (
@@ -37,10 +38,9 @@ func NewUser(login, password, pepper string) (*User, error) {
 	}, nil
 }
 
-// VerifyUserPassword верификация пароля пользователя
+// VerifyUserPassword верификация пароля пользователя.
 func (u *User) VerifyUserPassword(password, pepper string) bool {
-	var err error
+	err := bcrypt.CompareHashAndPassword([]byte(u.PassHash), []byte(password+pepper))
 
-	err = bcrypt.CompareHashAndPassword([]byte(u.PassHash), []byte(password+pepper))
 	return err == nil
 }

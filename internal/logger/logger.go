@@ -1,3 +1,4 @@
+// Package logger пакет с логгером zap.
 package logger
 
 import (

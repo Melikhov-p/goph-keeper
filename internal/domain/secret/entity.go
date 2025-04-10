@@ -1,21 +1,30 @@
+// Package secret пакет уровня домена секретов.
 package secret
 
 import (
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	"time"
 )
 
+// TypeOfSecret тип секрета.
 type TypeOfSecret string
 
 const (
+	// TypePassword секрет пароль.
 	TypePassword TypeOfSecret = "password"
-	TypeCard     TypeOfSecret = "card"
-	TypeNote     TypeOfSecret = "note"
-	TypeBinary   TypeOfSecret = "binary"
-	TypeOTP      TypeOfSecret = "otp"
+	// TypeCard секрет карта.
+	TypeCard TypeOfSecret = "card"
+	// TypeNote секрет текст.
+	TypeNote TypeOfSecret = "note"
+	// TypeBinary секрет бинарный.
+	TypeBinary TypeOfSecret = "binary"
+	// TypeOTP OTP one time password для авторизации.
+	TypeOTP TypeOfSecret = "otp"
 )
 
+// Valid проверка валидности типа секрета.
 func (tos *TypeOfSecret) Valid() bool {
 	switch *tos {
 	case TypePassword, TypeCard, TypeNote, TypeBinary, TypeOTP:
@@ -28,7 +37,7 @@ func (tos *TypeOfSecret) Valid() bool {
 // Scan реализует интерфейс sql.Scanner для чтения из БД.
 func (tos *TypeOfSecret) Scan(value interface{}) error {
 	if value == nil {
-		return fmt.Errorf("secret type cannot be null")
+		return errors.New("secret type cannot be null")
 	}
 
 	s, ok := value.(string)
@@ -46,11 +55,12 @@ func (tos *TypeOfSecret) Scan(value interface{}) error {
 // Value реализует интерфейс driver.Valuer для записи в БД.
 func (tos *TypeOfSecret) Value() (driver.Value, error) {
 	if !tos.Valid() {
-		return nil, fmt.Errorf("cannot save invalid secret type: %s", tos)
+		return nil, fmt.Errorf("cannot save invalid secret type: %s", string(*tos))
 	}
 	return string(*tos), nil
 }
 
+// Secret структура секрета.
 type Secret struct {
 	ID        int
 	UserID    int
@@ -62,6 +72,7 @@ type Secret struct {
 	Version   uint32
 }
 
+// NewSecret получение новой модели домена секрета.
 func NewSecret(userID int, name string, t TypeOfSecret) (*Secret, error) {
 	op := "domain.Secret.NewSecret"
 
@@ -78,6 +89,7 @@ func NewSecret(userID int, name string, t TypeOfSecret) (*Secret, error) {
 	}, nil
 }
 
+// PasswordData структура секрета для хранения пароля.
 type PasswordData struct {
 	SecretID       int
 	Username       string
