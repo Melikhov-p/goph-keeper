@@ -13,12 +13,14 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
+// UserService интерфейс сервиса пользователя.
 type UserService interface {
 	Register(ctx context.Context, login, password, pepper string) (*user.User, error)
 	Login(ctx context.Context, login, password, pepper string) (*user.User, error)
 	Update(ctx context.Context, u *user.User) error
 }
 
+// UserServer gRPC обработчик запросов для методов пользователя.
 type UserServer struct {
 	pb.UnimplementedUserServiceServer
 	service UserService
@@ -26,6 +28,7 @@ type UserServer struct {
 	cfg     *config.Config
 }
 
+// NewUserServer новый gRPC обработчик для пользователя.
 func NewUserServer(us UserService, log *zap.Logger, cfg *config.Config) *UserServer {
 	return &UserServer{
 		service: us,
@@ -34,6 +37,7 @@ func NewUserServer(us UserService, log *zap.Logger, cfg *config.Config) *UserSer
 	}
 }
 
+// Register регистрация пользователя.
 func (us *UserServer) Register(ctx context.Context, in *pb.RegisterUserRequest) (*pb.RegisterUserResponse, error) {
 	var (
 		u   *user.User
@@ -58,6 +62,7 @@ func (us *UserServer) Register(ctx context.Context, in *pb.RegisterUserRequest) 
 	return &res, nil
 }
 
+// Login аутентификация пользователя.
 func (us *UserServer) Login(ctx context.Context, in *pb.LoginUserRequest) (*pb.LoginUserResponse, error) {
 	var (
 		u   *user.User
@@ -86,6 +91,7 @@ func (us *UserServer) Login(ctx context.Context, in *pb.LoginUserRequest) (*pb.L
 	return &res, nil
 }
 
+// Update обновление пользователя.
 func (us *UserServer) Update(_ context.Context, _ *pb.UpdateUserRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method is not implemented")
 }

@@ -15,8 +15,7 @@ import (
 )
 
 const (
-	timeoutServerShutdown = time.Second * 5
-	timeoutShutdown       = time.Second * 10
+	timeoutShutdown = time.Second * 10
 )
 
 func main() {
