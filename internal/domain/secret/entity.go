@@ -20,14 +20,12 @@ const (
 	TypeNote TypeOfSecret = "note"
 	// TypeBinary секрет бинарный.
 	TypeBinary TypeOfSecret = "binary"
-	// TypeOTP OTP one time password для авторизации.
-	TypeOTP TypeOfSecret = "otp"
 )
 
 // Valid проверка валидности типа секрета.
 func (tos *TypeOfSecret) Valid() bool {
 	switch *tos {
-	case TypePassword, TypeCard, TypeNote, TypeBinary, TypeOTP:
+	case TypePassword, TypeCard, TypeNote, TypeBinary:
 		return true
 	default:
 		return false

@@ -2,13 +2,11 @@ env: "local"
 rpc:
   address: ":50051"
 database:
-  uri: "321"
-  external_storage_path: "C:\Users\melik\GolandProjects\goph-keeper\external_store"
-  migrations_path: "C:\Users\melik\GolandProjects\goph-keeper\internal\repository\migrations"
-  max_cons: 1
+  uri: "postgresql://goph_keeper:gophkeeper@localhost:5432/gophkeeper?sslmode=disable"
+  external_storage_path: "C:/Users/melik/GolandProjects/goph-keeper/external_store"
+  migrations_path: "C:/Users/melik/GolandProjects/goph-keeper/internal/repository/migrations"
+  max_cons: 10
 logging:
   level: "debug"
-otp:
-  algorithm: "SHA1"
-  digits: 6
-  period: 30
+security:
+  pepper: "0374f7d18258c7fac9ef607686d6716a"

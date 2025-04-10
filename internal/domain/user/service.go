@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
-	"go.uber.org/zap"
 )
 
 var (
@@ -22,14 +20,12 @@ var (
 // Service сервисный слой пользователя.
 type Service struct {
 	repo Repository
-	log  *zap.Logger
 }
 
 // NewService возвращает указатель на сервис для пользователя.
-func NewService(r Repository, l *zap.Logger) *Service {
+func NewService(r Repository) *Service {
 	return &Service{
 		repo: r,
-		log:  l,
 	}
 }
 

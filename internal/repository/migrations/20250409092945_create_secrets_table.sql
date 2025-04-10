@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS secrets (
                          id SERIAL PRIMARY KEY,
                          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                          name TEXT NOT NULL,
-                         type TEXT NOT NULL CHECK ( type IN ('password', 'card', 'note', 'binary', 'otp') ),
+                         type TEXT NOT NULL CHECK ( type IN ('password', 'card', 'note', 'binary') ),
                          created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
                          updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
                          deleted_at TIMESTAMP WITH TIME ZONE,

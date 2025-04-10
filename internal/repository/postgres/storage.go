@@ -6,13 +6,13 @@ import (
 	"fmt"
 
 	"github.com/Melikhov-p/goph-keeper/internal/config"
-	_ "github.com/jackc/pgx" // Импорт драйвера для postgres.
+	_ "github.com/jackc/pgx/v5/stdlib" // Импорт драйвера для postgres.
 	"github.com/pressly/goose"
 )
 
 // NewConnection установка соединения с базой данных.
 func NewConnection(cfg *config.Config) (*sql.DB, error) {
-	op := "repository.Postgres.ConnectDB"
+	op := "repository.Postgres.NewConnection"
 
 	db, err := sql.Open("pgx", cfg.Database.URI)
 	if err != nil {
