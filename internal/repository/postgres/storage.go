@@ -9,7 +9,7 @@ import (
 	"github.com/pressly/goose"
 )
 
-func ConnectDB(cfg *config.Config) (*sql.DB, error) {
+func NewConnection(cfg *config.Config) (*sql.DB, error) {
 	op := "repository.Postgres.ConnectDB"
 
 	db, err := sql.Open("pgx", cfg.Database.URI)

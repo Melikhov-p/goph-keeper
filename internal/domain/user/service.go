@@ -9,9 +9,14 @@ import (
 )
 
 var (
-	ErrUserAlreadyExist   = errors.New("user already exist")
-	ErrNotFound           = errors.New("user not found")
+	// ErrAlreadyExist пользователь уже существует.
+	ErrAlreadyExist = errors.New("user already exist")
+	// ErrNotFound пользователь не найден.
+	ErrNotFound = errors.New("user not found")
+	// ErrInvalidCredentials неверные данные.
 	ErrInvalidCredentials = errors.New("invalid credentials")
+	// ErrNoRowsUpdated не обновлено ни одной строки данных пользователя.
+	ErrNoRowsUpdated = errors.New("none rows was updated")
 )
 
 // Service сервисный слой пользователя.
@@ -28,6 +33,7 @@ func NewService(r Repository, l *zap.Logger) *Service {
 	}
 }
 
+// Register регистрация нового пользователя.
 func (s *Service) Register(ctx context.Context, login, password, pepper string) (*User, error) {
 	op := "domain.User.Register"
 
@@ -37,11 +43,11 @@ func (s *Service) Register(ctx context.Context, login, password, pepper string) 
 	)
 
 	user, err = s.repo.GetByLogin(ctx, login)
-	if err != nil {
+	if err != nil && !errors.Is(err, ErrNotFound) {
 		return nil, fmt.Errorf("%s: failed to check existing of user %w", op, err)
 	}
 	if user != nil {
-		return nil, ErrUserAlreadyExist
+		return nil, ErrAlreadyExist
 	}
 
 	user, err = NewUser(login, password, pepper)
@@ -57,6 +63,7 @@ func (s *Service) Register(ctx context.Context, login, password, pepper string) 
 	return user, nil
 }
 
+// Login авторизация пользователя.
 func (s *Service) Login(ctx context.Context, login, password, pepper string) (*User, error) {
 	var (
 		user *User
@@ -73,4 +80,23 @@ func (s *Service) Login(ctx context.Context, login, password, pepper string) (*U
 	}
 
 	return user, nil
+}
+
+// Update обновление данных о пользователе.
+func (s *Service) Update(ctx context.Context, u *User) error {
+	op := "domain.User.service.Update"
+
+	var err error
+
+	_, err = s.repo.GetByID(ctx, u.ID)
+	if err != nil {
+		return fmt.Errorf("%s: failed to check existing of user %w", op, err)
+	}
+
+	err = s.repo.Update(ctx, u)
+	if err != nil {
+		return fmt.Errorf("%s error updating user %w", op, err)
+	}
+
+	return nil
 }
