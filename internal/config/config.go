@@ -4,9 +4,9 @@ package config
 // Config структура конфиг файла.
 type Config struct {
 	Env      string         `yaml:"env"      env-default:"local"`
-	RPC      RPCConfig      `yaml:"rpc"      env-required:"true"`
-	Database DatabaseConfig `yaml:"database" env-required:"true"`
-	Logging  LoggingConfig  `yaml:"logging"  env-required:"false"`
+	RPC      RPCConfig      `yaml:"rpc"                          env-required:"true"`
+	Database DatabaseConfig `yaml:"database"                     env-required:"true"`
+	Logging  LoggingConfig  `yaml:"logging"                      env-required:"false"`
 	Security SecurityConfig `yaml:"security"`
 }
 
@@ -30,5 +30,6 @@ type LoggingConfig struct {
 
 // SecurityConfig структура конфига параметров безопасности.
 type SecurityConfig struct {
-	Pepper string `yaml:"pepper" env-required:"true"`
+	Pepper   string `yaml:"pepper" env-required:"true"`
+	TokenKey string `yaml:"token_key" env:"GK_TOKEN_KEY" env-required:"true"`
 }

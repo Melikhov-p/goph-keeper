@@ -8,6 +8,7 @@ import (
 	pb "github.com/Melikhov-p/goph-keeper/internal/api/gen"
 	"github.com/Melikhov-p/goph-keeper/internal/config"
 	"github.com/Melikhov-p/goph-keeper/internal/domain/user"
+	"github.com/Melikhov-p/goph-keeper/internal/interceptors"
 	"github.com/Melikhov-p/goph-keeper/internal/logger"
 	"github.com/Melikhov-p/goph-keeper/internal/repository/postgres"
 	grpc2 "github.com/Melikhov-p/goph-keeper/internal/transport/grpc"
@@ -48,7 +49,9 @@ func New(cfg *config.Config) (*App, error) {
 	app.UserService = user.NewService(app.UserRepository)
 
 	// Создание gRPC-сервера
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(interceptors.AuthInterceptor(cfg.Security.TokenKey)),
+	)
 
 	userServer := grpc2.NewUserServer(app.UserService, app.Log, app.Cfg)
 	pb.RegisterUserServiceServer(grpcServer, userServer)

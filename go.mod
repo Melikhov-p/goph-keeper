@@ -3,6 +3,7 @@ module github.com/Melikhov-p/goph-keeper
 go 1.23.2
 
 require (
+	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/pressly/goose v2.7.0+incompatible
