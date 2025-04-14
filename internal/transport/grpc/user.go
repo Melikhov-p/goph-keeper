@@ -3,12 +3,17 @@ package grpc
 import (
 	"context"
 	"errors"
+	"fmt"
+	"time"
 
 	pb "github.com/Melikhov-p/goph-keeper/internal/api/gen"
+	"github.com/Melikhov-p/goph-keeper/internal/auth"
 	"github.com/Melikhov-p/goph-keeper/internal/config"
 	"github.com/Melikhov-p/goph-keeper/internal/domain/user"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -40,9 +45,10 @@ func NewUserServer(us UserService, log *zap.Logger, cfg *config.Config) *UserSer
 // Register регистрация пользователя.
 func (us *UserServer) Register(ctx context.Context, in *pb.RegisterUserRequest) (*pb.RegisterUserResponse, error) {
 	var (
-		u   *user.User
-		res pb.RegisterUserResponse
-		err error
+		u     *user.User
+		token string
+		res   pb.RegisterUserResponse
+		err   error
 	)
 
 	u, err = us.service.Register(ctx, in.GetLogin(), in.GetPassword(), us.cfg.Security.Pepper)
@@ -52,6 +58,11 @@ func (us *UserServer) Register(ctx context.Context, in *pb.RegisterUserRequest) 
 			return nil, status.Error(codes.AlreadyExists, "user already exist")
 		}
 		return nil, status.Error(codes.Internal, "failed to register")
+	}
+
+	err = addTokenToCtx(ctx, u.ID, us.cfg.Security.TokenKey, us.cfg.Security.TokenTTL)
+	if err != nil {
+		us.log.Error("error adding token to context for new user", zap.Error(err), zap.Int("UserID", u.ID))
 	}
 
 	res.User = &pb.User{
@@ -94,4 +105,27 @@ func (us *UserServer) Login(ctx context.Context, in *pb.LoginUserRequest) (*pb.L
 // Update обновление пользователя.
 func (us *UserServer) Update(_ context.Context, _ *pb.UpdateUserRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method is not implemented")
+}
+
+func addTokenToCtx(ctx context.Context, userID int, tokenSecret string, tokenTTL time.Duration) error {
+	op := "transport.gRPC.user.addTokenToCtx"
+
+	var (
+		token string
+		err   error
+	)
+
+	token, err = auth.BuildJWTToken(userID, tokenSecret, tokenTTL)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	err = grpc.SendHeader(ctx, metadata.New(map[string]string{
+		"authorization": token,
+	}))
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
 }

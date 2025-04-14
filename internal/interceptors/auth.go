@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Melikhov-p/goph-keeper/internal/auth"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -11,7 +12,7 @@ import (
 )
 
 // AuthInterceptor перехватчик авторизации.
-func AuthInterceptor(secretKey string) grpc.UnaryServerInterceptor {
+func AuthInterceptor(secretKey string, log *zap.Logger) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
 		req any,
@@ -19,8 +20,8 @@ func AuthInterceptor(secretKey string) grpc.UnaryServerInterceptor {
 		handler grpc.UnaryHandler,
 	) (resp any, err error) {
 		// Пропускаем аутентификацию для публичных методов
-		if info.FullMethod == "/pb.UserService/Register" ||
-			info.FullMethod == "/pb.UserService/Login" {
+		if info.FullMethod == "/gophkeeper.v1.UserService/Register" ||
+			info.FullMethod == "/gophkeeper.v1.UserService/Login" {
 			return handler(ctx, req)
 		}
 

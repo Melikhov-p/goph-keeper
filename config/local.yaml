@@ -10,3 +10,5 @@ logging:
   level: "debug"
 security:
   pepper: "0374f7d18258c7fac9ef607686d6716a"
+  token_key: "a6176d686706fe9caf7c85281d7f4730"
+  token_ttl: 24h

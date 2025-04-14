@@ -11,6 +11,7 @@ import (
 
 	application "github.com/Melikhov-p/goph-keeper/internal/app"
 	"github.com/Melikhov-p/goph-keeper/internal/config"
+	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -36,7 +37,7 @@ func run() error {
 
 	cfg, err = config.Load()
 	if err != nil {
-		return fmt.Errorf("failed to get config %w", err)
+		return fmt.Errorf("failed to get config -> %w", err)
 	}
 
 	rootCtx, cancelCtx := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
@@ -58,6 +59,8 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("failed to get app %w", err)
 	}
+
+	app.Log.Debug("app initialize with config", zap.Any("config", app.Cfg))
 
 	eg.Go(func() error {
 		err = app.RunGRPC()

@@ -50,7 +50,8 @@ func New(cfg *config.Config) (*App, error) {
 
 	// Создание gRPC-сервера
 	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(interceptors.AuthInterceptor(cfg.Security.TokenKey)),
+		grpc.UnaryInterceptor(interceptors.AuthInterceptor(cfg.Security.TokenKey, app.Log)),
+		grpc.UnaryInterceptor(interceptors.LogInterceptor(app.Log)),
 	)
 
 	userServer := grpc2.NewUserServer(app.UserService, app.Log, app.Cfg)
