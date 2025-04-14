@@ -43,10 +43,10 @@ func (ur *UserRepository) GetByID(ctx context.Context, id int) (*user.User, erro
 
 	var u user.User
 
-	query := `SELECT (login, password_hash, created_at, updated_at) from users WHERE id = $1`
+	query := `SELECT login, password_hash, created_at, updated_at from users WHERE id = $1`
 
 	row := ur.db.QueryRowContext(ctx, query, id)
-	if err := row.Scan(u.Login, u.PassHash, u.CreatedAt, u.UpdatedAt); err != nil {
+	if err := row.Scan(&u.Login, &u.PassHash, &u.CreatedAt, &u.UpdatedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, user.ErrNotFound
 		}
@@ -63,10 +63,10 @@ func (ur *UserRepository) GetByLogin(ctx context.Context, login string) (*user.U
 
 	var u user.User
 
-	query := `SELECT (id, password_hash, created_at, updated_at) from users WHERE login = $1`
+	query := `SELECT id, password_hash, created_at, updated_at from users WHERE login = $1`
 
 	row := ur.db.QueryRowContext(ctx, query, login)
-	if err := row.Scan(u.ID, u.PassHash, u.CreatedAt, u.UpdatedAt); err != nil {
+	if err := row.Scan(&u.ID, &u.PassHash, &u.CreatedAt, &u.UpdatedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, user.ErrNotFound
 		}

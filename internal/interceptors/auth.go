@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/Melikhov-p/goph-keeper/internal/auth"
-	"go.uber.org/zap"
+	contextkeys "github.com/Melikhov-p/goph-keeper/internal/context_keys"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -12,7 +12,7 @@ import (
 )
 
 // AuthInterceptor перехватчик авторизации.
-func AuthInterceptor(secretKey string, log *zap.Logger) grpc.UnaryServerInterceptor {
+func AuthInterceptor(secretKey string) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
 		req any,
@@ -45,7 +45,7 @@ func AuthInterceptor(secretKey string, log *zap.Logger) grpc.UnaryServerIntercep
 		}
 
 		// Добавляем userID в контекст
-		newCtx := context.WithValue(ctx, "userID", userID)
+		newCtx := context.WithValue(ctx, contextkeys.UserID, userID)
 
 		return handler(newCtx, req)
 	}

@@ -61,6 +61,8 @@ func (s *Service) Register(ctx context.Context, login, password, pepper string) 
 
 // Login авторизация пользователя.
 func (s *Service) Login(ctx context.Context, login, password, pepper string) (*User, error) {
+	op := "domain.User.service.Login"
+
 	var (
 		user *User
 		err  error
@@ -68,11 +70,17 @@ func (s *Service) Login(ctx context.Context, login, password, pepper string) (*U
 
 	user, err = s.repo.GetByLogin(ctx, login)
 	if err != nil {
-		return nil, ErrInvalidCredentials
+		if errors.Is(err, ErrNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, fmt.Errorf("%s: failed to get user by login %w", op, err)
 	}
 
 	if !user.VerifyUserPassword(password, pepper) {
-		return nil, ErrInvalidCredentials
+		if errors.Is(err, ErrInvalidCredentials) {
+			return nil, ErrInvalidCredentials
+		}
+		return nil, fmt.Errorf("%s: error verify user password %w", op, err)
 	}
 
 	return user, nil

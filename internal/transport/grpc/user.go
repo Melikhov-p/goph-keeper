@@ -9,6 +9,7 @@ import (
 	pb "github.com/Melikhov-p/goph-keeper/internal/api/gen"
 	"github.com/Melikhov-p/goph-keeper/internal/auth"
 	"github.com/Melikhov-p/goph-keeper/internal/config"
+	contextkeys "github.com/Melikhov-p/goph-keeper/internal/context_keys"
 	"github.com/Melikhov-p/goph-keeper/internal/domain/user"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -45,10 +46,9 @@ func NewUserServer(us UserService, log *zap.Logger, cfg *config.Config) *UserSer
 // Register регистрация пользователя.
 func (us *UserServer) Register(ctx context.Context, in *pb.RegisterUserRequest) (*pb.RegisterUserResponse, error) {
 	var (
-		u     *user.User
-		token string
-		res   pb.RegisterUserResponse
-		err   error
+		u   *user.User
+		res pb.RegisterUserResponse
+		err error
 	)
 
 	u, err = us.service.Register(ctx, in.GetLogin(), in.GetPassword(), us.cfg.Security.Pepper)
@@ -94,6 +94,11 @@ func (us *UserServer) Login(ctx context.Context, in *pb.LoginUserRequest) (*pb.L
 		}
 	}
 
+	err = addTokenToCtx(ctx, u.ID, us.cfg.Security.TokenKey, us.cfg.Security.TokenTTL)
+	if err != nil {
+		us.log.Error("failed to add token for login user to context", zap.Error(err))
+	}
+
 	res.User = &pb.User{
 		Login: u.Login,
 		Id:    int32(u.ID),
@@ -103,8 +108,13 @@ func (us *UserServer) Login(ctx context.Context, in *pb.LoginUserRequest) (*pb.L
 }
 
 // Update обновление пользователя.
-func (us *UserServer) Update(_ context.Context, _ *pb.UpdateUserRequest) (*emptypb.Empty, error) {
-	return nil, status.Error(codes.Unimplemented, "method is not implemented")
+func (us *UserServer) Update(ctx context.Context, _ *pb.UpdateUserRequest) (*emptypb.Empty, error) {
+	userID, ok := ctx.Value(contextkeys.UserID).(int)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "user unauthenticated")
+	}
+
+	return nil, status.Error(codes.OK, fmt.Sprintf("%d", userID))
 }
 
 func addTokenToCtx(ctx context.Context, userID int, tokenSecret string, tokenTTL time.Duration) error {
