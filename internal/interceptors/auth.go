@@ -23,7 +23,7 @@ func AuthInterceptor(secretKey string) grpc.UnaryServerInterceptor {
 		// Пропускаем аутентификацию для публичных методов
 		if info.FullMethod == "/gophkeeper.v1.UserService/Register" ||
 			info.FullMethod == "/gophkeeper.v1.UserService/Login" {
-			return handler(ctx, req), nil
+			return handler(ctx, req)
 		}
 
 		// Извлекаем токен из метаданных
@@ -48,6 +48,6 @@ func AuthInterceptor(secretKey string) grpc.UnaryServerInterceptor {
 		// Добавляем userID в контекст
 		newCtx := context.WithValue(ctx, contextkeys.UserID, userID)
 
-		return handler(newCtx, req), nil
+		return handler(newCtx, req)
 	}
 }

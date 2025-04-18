@@ -17,7 +17,6 @@ issues:
   # Set to 0 to disable.
   # Default: 3
   max-same-issues: 100
-  max-from-linter: 100
 
 output:
   formats:
@@ -27,7 +26,7 @@ output:
 formatters:
   enable:
     - goimports # checks if the code and import statements are formatted according to the 'goimports' command
-    - golines # checks if code is formatted, and fixes long lines
+    #- golines # checks if code is formatted, and fixes long lines
 
     ## you may want to enable
     #- gci # checks if code and import statements are formatted, with additional rules
@@ -45,10 +44,10 @@ formatters:
       local-prefixes:
         - github.com/my/project
 
-    golines:
-      # Target maximum line length.
-      # Default: 100
-      max-len: 120
+#    golines:
+#      # Target maximum line length.
+#      # Default: 100
+#      max-len: 120
 
 linters:
   enable:
@@ -67,7 +66,6 @@ linters:
     - errorlint # finds code that will cause problems with the error wrapping scheme introduced in Go 1.13
     - exhaustive # checks exhaustiveness of enum switch statements
     - exptostd # detects functions from golang.org/x/exp/ that can be replaced by std functions
-    - fatcontext # detects nested contexts in loops
     - funlen # tool for detection of long functions
     - gocheckcompilerdirectives # validates go compiler directive comments (//go:)
     - gochecknoglobals # checks that no global variables exist
@@ -94,7 +92,6 @@ linters:
     - nestif # reports deeply nested if statements
     - nilerr # finds the code that returns nil even if it checks that the error is not nil
     - nilnesserr # reports that it checks for err != nil, but it returns a different nil value error (powered by nilness and nilerr)
-    - nilnil # checks that there is no simultaneous return of nil error and an invalid value
     - noctx # finds sending http request without context.Context
     - nolintlint # reports ill-formed or insufficient nolint directives
     - nonamedreturns # reports all named returns
@@ -125,6 +122,8 @@ linters:
     - wrapcheck # checks that errors returned from external packages are wrapped
 
     ## you may want to enable
+    #- nilnil # checks that there is no simultaneous return of nil error and an invalid value
+    #- fatcontext # detects nested contexts in loops
     #- forbidigo # forbids identifiers
     #- decorder # checks declaration order and count of types, constants, variables and functions
     #- exhaustruct # [highly recommend to enable] checks if all structure fields are initialized
@@ -343,7 +342,7 @@ linters:
     nolintlint:
       # Exclude following linters from requiring an explanation.
       # Default: []
-      allow-no-explanation: [ funlen, gocognit, golines ]
+      allow-no-explanation: [ funlen, gocognit ]
       # Enable to require an explanation of nonzero length after each nolint directive.
       # Default: false
       require-explanation: true
