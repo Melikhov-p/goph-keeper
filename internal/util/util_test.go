@@ -1,10 +1,11 @@
-package util
+package util_test
 
 import (
 	"fmt"
 	"math"
 	"testing"
 
+	"github.com/Melikhov-p/goph-keeper/internal/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -42,7 +43,7 @@ func TestSafeConvertToInt32(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			res, err := SafeConvertToInt32(test.value)
+			res, err := util.SafeConvertToInt32(test.value)
 
 			if !test.wantErr {
 				require.NoError(t, err)
@@ -58,14 +59,14 @@ func TestSafeConvertToInt32(t *testing.T) {
 
 func ExampleSafeConvertToInt32() {
 	valueInt := 1
-	valueInt32, err := SafeConvertToInt32(valueInt)
-	fmt.Println("1: ", valueInt32, err)
+	valueInt32, err := util.SafeConvertToInt32(valueInt)
+	fmt.Println("1:", valueInt32, err)
 
 	bigValueInt := math.MaxUint32 + 1
-	bigValueInt32, bigErr := SafeConvertToInt32(bigValueInt)
-	fmt.Println("2: ", bigValueInt32, bigErr)
+	bigValueInt32, bigErr := util.SafeConvertToInt32(bigValueInt)
+	fmt.Println("2:", bigValueInt32, bigErr)
 
 	// Output:
-	// 1: 1 nil
-	// 2: 0, value is out of range int32
+	// 1: 1 <nil>
+	// 2: 0 value 4294967296 out of range of int32
 }

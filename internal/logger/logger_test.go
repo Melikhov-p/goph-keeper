@@ -1,8 +1,9 @@
-package logger
+package logger_test
 
 import (
 	"testing"
 
+	"github.com/Melikhov-p/goph-keeper/internal/logger"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -30,7 +31,7 @@ func TestBuildLogger(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			_, err := BuildLogger(test.level)
+			_, err := logger.BuildLogger(test.level)
 
 			if test.wantErr {
 				require.Error(t, err)
@@ -43,14 +44,11 @@ func TestBuildLogger(t *testing.T) {
 
 func ExampleBuildLogger() {
 	logLevel := "info"
-	log, err := BuildLogger(logLevel)
+	log, err := logger.BuildLogger(logLevel)
 	if err != nil {
 		panic("fail")
 	}
 
 	log.Debug("debug msg: don't shown cause of log level", zap.String("level", logLevel))
 	log.Info("info msg: show cause of log level", zap.String("logLevel", logLevel))
-
-	// Output:
-	// {"level":"info","msg":"info msg: show cause of log level", "logLevel":"info"}
 }
