@@ -1,3 +1,4 @@
+// Package auth пакет с методами для генерации/разборки токенов.
 package auth
 
 import (
@@ -8,11 +9,13 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
+// Claims структура утверждений для JWT токена.
 type Claims struct {
 	jwt.RegisteredClaims
 	UserID int
 }
 
+// BuildJWTToken строит JWT токен.
 func BuildJWTToken(userID int, secretKey string, tokenLifeTime time.Duration) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -29,6 +32,7 @@ func BuildJWTToken(userID int, secretKey string, tokenLifeTime time.Duration) (s
 	return tokenString, nil
 }
 
+// GetUserIDbyToken вытаскивает из токена ID пользователя.
 func GetUserIDbyToken(tokenString string, secretKey string) (int, error) {
 	claims := Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (interface{}, error) {

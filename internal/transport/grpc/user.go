@@ -1,3 +1,4 @@
+// Package grpc пакет обработчиков gRPC запросов.
 package grpc
 
 import (
@@ -11,6 +12,7 @@ import (
 	"github.com/Melikhov-p/goph-keeper/internal/config"
 	contextkeys "github.com/Melikhov-p/goph-keeper/internal/context_keys"
 	"github.com/Melikhov-p/goph-keeper/internal/domain/user"
+	"github.com/Melikhov-p/goph-keeper/internal/util"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -55,9 +57,11 @@ func (us *UserServer) Register(ctx context.Context, in *pb.RegisterUserRequest) 
 	if err != nil {
 		us.log.Error("error register new user", zap.Error(err), zap.String("Login", in.GetLogin()))
 		if errors.Is(err, user.ErrAlreadyExist) {
-			return nil, status.Error(codes.AlreadyExists, "user already exist")
+			err = status.Error(codes.AlreadyExists, "user already exist")
+			return nil, fmt.Errorf("failed to register new user: %w", err)
 		}
-		return nil, status.Error(codes.Internal, "failed to register")
+		err = status.Error(codes.Internal, "failed to register")
+		return nil, fmt.Errorf("failed to register new user: %w", err)
 	}
 
 	err = addTokenToCtx(ctx, u.ID, us.cfg.Security.TokenKey, us.cfg.Security.TokenTTL)
@@ -65,9 +69,16 @@ func (us *UserServer) Register(ctx context.Context, in *pb.RegisterUserRequest) 
 		us.log.Error("error adding token to context for new user", zap.Error(err), zap.Int("UserID", u.ID))
 	}
 
+	userID32, err := util.SafeConvertToInt32(u.ID)
+	if err != nil {
+		us.log.Error("error convert userID to int32", zap.Error(err), zap.Int("UserID", u.ID))
+		err = status.Error(codes.Internal, "failed to build response")
+		return nil, fmt.Errorf("failed to write response: %w", err)
+	}
+
 	res.User = &pb.User{
 		Login: u.Login,
-		Id:    int32(u.ID),
+		Id:    userID32,
 	}
 
 	return &res, nil
@@ -86,11 +97,14 @@ func (us *UserServer) Login(ctx context.Context, in *pb.LoginUserRequest) (*pb.L
 		us.log.Error("error login user", zap.Error(err), zap.String("Login", in.GetLogin()))
 		switch {
 		case errors.Is(err, user.ErrInvalidCredentials):
-			return nil, status.Error(codes.InvalidArgument, "invalid credentials")
+			err = status.Error(codes.InvalidArgument, "invalid credentials")
+			return nil, fmt.Errorf("failed to login user: %w", err)
 		case errors.Is(err, user.ErrNotFound):
-			return nil, status.Error(codes.NotFound, "user not found")
+			err = status.Error(codes.NotFound, "user not found")
+			return nil, fmt.Errorf("failed to login user: %w", err)
 		default:
-			return nil, status.Error(codes.Internal, "failed to login")
+			err = status.Error(codes.Internal, "failed to login")
+			return nil, fmt.Errorf("failed to login user: %w", err)
 		}
 	}
 
@@ -99,9 +113,16 @@ func (us *UserServer) Login(ctx context.Context, in *pb.LoginUserRequest) (*pb.L
 		us.log.Error("failed to add token for login user to context", zap.Error(err))
 	}
 
+	userID32, err := util.SafeConvertToInt32(u.ID)
+	if err != nil {
+		us.log.Error("error convert userID to int32", zap.Error(err), zap.Int("UserID", u.ID))
+		err = status.Error(codes.Internal, "failed to build response")
+		return nil, fmt.Errorf("failed to write response: %w", err)
+	}
+
 	res.User = &pb.User{
 		Login: u.Login,
-		Id:    int32(u.ID),
+		Id:    userID32,
 	}
 
 	return &res, nil
@@ -109,12 +130,16 @@ func (us *UserServer) Login(ctx context.Context, in *pb.LoginUserRequest) (*pb.L
 
 // Update обновление пользователя.
 func (us *UserServer) Update(ctx context.Context, _ *pb.UpdateUserRequest) (*emptypb.Empty, error) {
-	userID, ok := ctx.Value(contextkeys.UserID).(int)
+	_, ok := ctx.Value(contextkeys.UserID).(int)
+
+	var err error
+
 	if !ok {
-		return nil, status.Error(codes.Unauthenticated, "user unauthenticated")
+		err = status.Error(codes.Unauthenticated, "user unauthenticated")
+		return nil, fmt.Errorf("failed to get userID from context: %w", err)
 	}
 
-	return nil, status.Error(codes.OK, fmt.Sprintf("%d", userID))
+	return nil, nil
 }
 
 func addTokenToCtx(ctx context.Context, userID int, tokenSecret string, tokenTTL time.Duration) error {

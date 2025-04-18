@@ -1,3 +1,4 @@
+// Package interceptors пакет с перехватчиками для gRPC запросов.
 package interceptors
 
 import (
@@ -18,11 +19,11 @@ func AuthInterceptor(secretKey string) grpc.UnaryServerInterceptor {
 		req any,
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
-	) (resp any, err error) {
+	) (any, error) {
 		// Пропускаем аутентификацию для публичных методов
 		if info.FullMethod == "/gophkeeper.v1.UserService/Register" ||
 			info.FullMethod == "/gophkeeper.v1.UserService/Login" {
-			return handler(ctx, req)
+			return handler(ctx, req), nil
 		}
 
 		// Извлекаем токен из метаданных
@@ -47,6 +48,6 @@ func AuthInterceptor(secretKey string) grpc.UnaryServerInterceptor {
 		// Добавляем userID в контекст
 		newCtx := context.WithValue(ctx, contextkeys.UserID, userID)
 
-		return handler(newCtx, req)
+		return handler(newCtx, req), nil
 	}
 }

@@ -48,7 +48,7 @@ func run() error {
 	// происходит, если после завершения контекста
 	// приложение не смогло завершиться за отведенный промежуток времени
 	context.AfterFunc(ctx, func() {
-		ctx, cancelCtx := context.WithTimeout(context.Background(), timeoutShutdown)
+		ctx, cancelCtx = context.WithTimeout(context.Background(), timeoutShutdown)
 		defer cancelCtx()
 
 		<-ctx.Done()

@@ -15,7 +15,7 @@ func LogInterceptor(log *zap.Logger) grpc.UnaryServerInterceptor {
 		req any,
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
-	) (resp any, err error) {
+	) (any, error) {
 		startTime := time.Now()
 
 		res, err := handler(ctx, req)
