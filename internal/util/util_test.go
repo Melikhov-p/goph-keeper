@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSafeConvertToInt32(t *testing.T) {
@@ -29,13 +30,13 @@ func TestSafeConvertToInt32(t *testing.T) {
 			name:     "tooBig",
 			value:    unConvertable,
 			wantErr:  true,
-			expected: *new(int32),
+			expected: int32(0),
 		},
 		{
 			name:     "tooShort",
 			value:    minUnConvertable,
 			wantErr:  true,
-			expected: *new(int32),
+			expected: int32(0),
 		},
 	}
 
@@ -44,10 +45,10 @@ func TestSafeConvertToInt32(t *testing.T) {
 			res, err := SafeConvertToInt32(test.value)
 
 			if !test.wantErr {
-				assert.NoError(t, err)
-				assert.IsType(t, *new(int32), res)
+				require.NoError(t, err)
+				assert.IsType(t, int32(0), res)
 			} else {
-				assert.Error(t, err)
+				require.Error(t, err)
 			}
 
 			assert.Equal(t, test.expected, res)
@@ -65,8 +66,6 @@ func ExampleSafeConvertToInt32() {
 	fmt.Println("2: ", bigValueInt32, bigErr)
 
 	// Output:
-
 	// 1: 1 nil
-
 	// 2: 0, value is out of range int32
 }

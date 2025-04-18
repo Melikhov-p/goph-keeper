@@ -110,7 +110,6 @@ linters:
     - staticcheck # is a go vet on steroids, applying a ton of static analysis checks
     - testableexamples # checks if examples are testable (have an expected output)
     - testifylint # checks usage of github.com/stretchr/testify
-    - testpackage # makes you use a separate _test package
     - tparallel # detects inappropriate usage of t.Parallel() method in your Go test codes
     - unconvert # removes unnecessary type conversions
     - unparam # reports unused function parameters
@@ -122,6 +121,7 @@ linters:
     - wrapcheck # checks that errors returned from external packages are wrapped
 
     ## you may want to enable
+    #- testpackage # makes you use a separate _test package
     #- nilnil # checks that there is no simultaneous return of nil error and an invalid value
     #- fatcontext # detects nested contexts in loops
     #- forbidigo # forbids identifiers

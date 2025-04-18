@@ -3,7 +3,7 @@ package logger
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
 
@@ -33,9 +33,9 @@ func TestBuildLogger(t *testing.T) {
 			_, err := BuildLogger(test.level)
 
 			if test.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -52,6 +52,5 @@ func ExampleBuildLogger() {
 	log.Info("info msg: show cause of log level", zap.String("logLevel", logLevel))
 
 	// Output:
-
 	// {"level":"info","msg":"info msg: show cause of log level", "logLevel":"info"}
 }
