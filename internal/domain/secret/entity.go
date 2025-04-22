@@ -13,6 +13,8 @@ import (
 // TypeOfSecret тип секрета.
 type TypeOfSecret string
 
+var InvalidSecretTypeErr = errors.New("invalid secret type")
+
 const (
 	// TypePassword секрет пароль.
 	TypePassword TypeOfSecret = "password"
@@ -23,16 +25,6 @@ const (
 	// TypeBinary секрет бинарный.
 	TypeBinary TypeOfSecret = "binary"
 )
-
-// Valid проверка валидности типа секрета.
-func (tos *TypeOfSecret) Valid() bool {
-	switch *tos {
-	case TypePassword, TypeCard, TypeNote, TypeBinary:
-		return true
-	default:
-		return false
-	}
-}
 
 // Scan реализует интерфейс sql.Scanner для чтения из БД.
 func (tos *TypeOfSecret) Scan(value interface{}) error {
@@ -46,22 +38,16 @@ func (tos *TypeOfSecret) Scan(value interface{}) error {
 	}
 
 	*tos = TypeOfSecret(s)
-	if !tos.Valid() {
-		return fmt.Errorf("invalid secret type: %s", s)
-	}
 	return nil
 }
 
 // Value реализует интерфейс driver.Valuer для записи в БД.
 func (tos *TypeOfSecret) Value() (driver.Value, error) {
-	if !tos.Valid() {
-		return nil, fmt.Errorf("cannot save invalid secret type: %s", string(*tos))
-	}
 	return string(*tos), nil
 }
 
 // Secret структура секрета.
-type Secret struct {
+type Secret[T PasswordData | CardData | FileData] struct {
 	ID        int
 	UserID    int
 	Name      string
@@ -70,34 +56,46 @@ type Secret struct {
 	UpdatedAt time.Time
 	DeletedAt time.Time
 	Version   uint32
+	Data      T
 }
 
 // NewSecret получение новой модели домена секрета.
-func NewSecret(userID int, name string, t TypeOfSecret) (*Secret, error) {
-	op := "domain.Secret.NewSecret"
+func NewSecret[T PasswordData | CardData | FileData](userID int, name string, data any) (*Secret[T], error) {
+	var secretData T
 
-	if !t.Valid() {
-		return nil, fmt.Errorf("%s: invalid type of secret", op)
-	}
-	return &Secret{
+	secret := &Secret[T]{
 		UserID:    userID,
 		Name:      name,
-		Type:      t,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 		Version:   1,
-	}, nil
+	}
+
+	switch any(secretData).(type) {
+	case PasswordData:
+		secret.Type = TypePassword
+	case CardData:
+		secret.Type = TypeCard
+	case FileData:
+		secret.Type = TypeBinary
+	default:
+		return nil, InvalidSecretTypeErr
+	}
+
+	secret.Data = data
+
+	return secret, nil
 }
 
-type BaseSecretData struct {
+type baseSecretData struct {
 	SecretID       int
 	Username       string
 	NotesEncrypted string
 	MetaData       []byte
 }
 
-func NewBaseSecretData(secretID int, username, notes string, metaData []byte) (BaseSecretData, error) {
-	op := "domain.BaseSecretData.NewBaseSecretData"
+func newBaseSecretData(secretID int, username, notes string, metaData []byte) (baseSecretData, error) {
+	op := "domain.baseSecretData.newBaseSecretData"
 
 	var (
 		notesEnc string
@@ -106,10 +104,10 @@ func NewBaseSecretData(secretID int, username, notes string, metaData []byte) (B
 
 	notesEnc, err = encryptor.Encrypt([]byte(notes))
 	if err != nil {
-		return BaseSecretData{}, fmt.Errorf("%s: %w", op, err)
+		return baseSecretData{}, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return BaseSecretData{
+	return baseSecretData{
 		SecretID:       secretID,
 		Username:       username,
 		NotesEncrypted: notesEnc,
@@ -119,7 +117,7 @@ func NewBaseSecretData(secretID int, username, notes string, metaData []byte) (B
 
 // PasswordData структура секрета для хранения пароля.
 type PasswordData struct {
-	BaseSecretData
+	baseSecretData
 	PassEncrypted  string
 	URL            string
 	NotesEncrypted string
@@ -127,15 +125,17 @@ type PasswordData struct {
 }
 
 // NewPasswordData получение новой модели секрета с паролем.
-func NewPasswordData(secretID int, username, pass, url, notes string, metaData []byte) (*PasswordData, error) {
+func NewPasswordData(secretID, userID int, username, pass, url, notes string, metaData []byte) (*Secret[PasswordData], error) {
 	op := "domain.PasswordData.NewPasswordData"
 
 	var (
 		passEnc string
+		secret  *Secret[PasswordData]
+		data    *PasswordData
 		err     error
 	)
 
-	base, err := NewBaseSecretData(secretID, username, notes, metaData)
+	base, err := newBaseSecretData(secretID, username, notes, metaData)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -145,16 +145,23 @@ func NewPasswordData(secretID int, username, pass, url, notes string, metaData [
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return &PasswordData{
-		BaseSecretData: base,
+	data = &PasswordData{
+		baseSecretData: base,
 		PassEncrypted:  passEnc,
 		URL:            url,
-	}, nil
+	}
+
+	secret, err = NewSecret[PasswordData](userID, username, data)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return secret, nil
 }
 
 // CardData структура для секрета с данными карты.
 type CardData struct {
-	BaseSecretData
+	baseSecretData
 	NumberEnc     string
 	OwnerEnc      string
 	ExpireDateEnc string
@@ -163,18 +170,20 @@ type CardData struct {
 
 // NewCardData новая модель для секрета данных карты.
 func NewCardData(
-	secretID int,
+	secretID, userID int,
 	username, number, owner, cvv, notes, expireDate string,
 	metaData []byte,
-) (*CardData, error) {
+) (*Secret[CardData], error) {
 	op := "domain.CardData.NewCardData"
 
 	var (
+		data                                       *CardData
+		secret                                     *Secret[CardData]
 		numberEnc, ownerEnc, expireDateEnc, cvvEnc string
 		err                                        error
 	)
 
-	base, err := NewBaseSecretData(secretID, username, notes, metaData)
+	base, err := newBaseSecretData(secretID, username, notes, metaData)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -196,33 +205,46 @@ func NewCardData(
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return &CardData{
-		BaseSecretData: base,
+	data = &CardData{
+		baseSecretData: base,
 		NumberEnc:      numberEnc,
 		OwnerEnc:       ownerEnc,
 		ExpireDateEnc:  expireDateEnc,
 		CVVEnc:         cvvEnc,
-	}, nil
+	}
+
+	secret, err = NewSecret[CardData](userID, username, data)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return secret, nil
 }
 
 // FileData структура для секретных файлов.
 type FileData struct {
-	BaseSecretData
+	baseSecretData
 	Path       string
 	Name       string
 	ContentEnc string
 }
 
 // NewFileData новая модель секретного файла. (двоичных данных)
-func NewFileData(secretID int, username, fileName, notes, pathToSave string, content, metaData []byte) (*FileData, error) {
+func NewFileData(
+	secretID, userID int,
+	username, fileName, notes, pathToSave string,
+	content, metaData []byte,
+) (*Secret[FileData], error) {
 	op := "domain.FileData.NewFileData"
 
 	var (
+		data       *FileData
+		secret     *Secret[FileData]
 		contentEnc string
 		err        error
 	)
 
-	base, err := NewBaseSecretData(secretID, username, notes, metaData)
+	base, err := newBaseSecretData(secretID, username, notes, metaData)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -232,10 +254,17 @@ func NewFileData(secretID int, username, fileName, notes, pathToSave string, con
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return &FileData{
-		BaseSecretData: base,
+	data = &FileData{
+		baseSecretData: base,
 		Path:           pathToSave + "/" + fileName,
 		ContentEnc:     contentEnc,
 		Name:           fileName,
-	}, nil
+	}
+
+	secret, err = NewSecret[FileData](userID, username, data)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return secret, nil
 }
