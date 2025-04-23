@@ -17,7 +17,7 @@ type TypeOfSecret string
 type SecretData interface {
 	Encrypt() error
 	Decrypt() error
-	setID(newID int)
+	SetID(newID int)
 }
 
 var ErrInvalidSecretType = errors.New("invalid secret type")
@@ -102,11 +102,6 @@ type baseSecretData struct {
 	Notes     string
 	MetaData  []byte
 	Encrypted bool
-}
-
-func (s *Secret) SetID(newID int) {
-	s.ID = newID
-	s.Data.setID(newID)
 }
 
 // newBaseSecretData получение модели с данными базовыми для всех секретных данных.
@@ -252,7 +247,7 @@ func (pd *PasswordData) Decrypt() error {
 	return nil
 }
 
-func (pd *PasswordData) setID(newID int) {
+func (pd *PasswordData) SetID(newID int) {
 	pd.SecretID = newID
 }
 
@@ -375,7 +370,7 @@ func (cd *CardData) Decrypt() error {
 	return nil
 }
 
-func (cd *CardData) setID(newID int) {
+func (cd *CardData) SetID(newID int) {
 	cd.SecretID = newID
 }
 
@@ -477,6 +472,6 @@ func (fd *FileData) Decrypt() error {
 	return nil
 }
 
-func (fd *FileData) setID(newID int) {
+func (fd *FileData) SetID(newID int) {
 	fd.SecretID = newID
 }

@@ -7,6 +7,7 @@ import (
 
 	pb "github.com/Melikhov-p/goph-keeper/internal/api/gen"
 	"github.com/Melikhov-p/goph-keeper/internal/config"
+	"github.com/Melikhov-p/goph-keeper/internal/domain/secret"
 	"github.com/Melikhov-p/goph-keeper/internal/domain/user"
 	"github.com/Melikhov-p/goph-keeper/internal/interceptors"
 	"github.com/Melikhov-p/goph-keeper/internal/logger"
@@ -21,8 +22,10 @@ type App struct {
 	Cfg *config.Config
 
 	UserRepository user.Repository
+	UserService    *user.Service
 
-	UserService *user.Service
+	SecretRepository secret.Repository
+	SecretService    *secret.Service
 
 	GRPCServer *grpc.Server
 
@@ -47,6 +50,9 @@ func New(cfg *config.Config) (*App, error) {
 
 	app.UserRepository = postgres.NewUserRepository(db)
 	app.UserService = user.NewService(app.UserRepository)
+
+	app.SecretRepository = postgres.NewSecretRepository(db)
+	app.SecretService = secret.NewService(app.SecretRepository, app.Cfg)
 
 	// Создание gRPC-сервера
 	grpcServer := grpc.NewServer(

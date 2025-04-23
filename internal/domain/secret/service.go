@@ -42,12 +42,12 @@ func (s *Service) CreateSecretPassword(
 		return nil, fmt.Errorf("%s: failed to get new domain model for password secret %w", op, err)
 	}
 
-	newSecretID, err = s.repo.SaveSecret(ctx, secret)
+	err = s.repo.SaveSecret(ctx, secret)
 	if err != nil {
 		return nil, fmt.Errorf("%s: failed to save secret on storage with error %w", op, err)
 	}
 
-	secret.SetID(newSecretID)
+	secret.Data.SetID(newSecretID) // После сохранения секрета, нужно обновить ID секрета в его данных
 
 	return secret, nil
 }
@@ -71,12 +71,12 @@ func (s *Service) CreateSecretCard(
 		return nil, fmt.Errorf("%s: failed to get new domain model for card secret %w", op, err)
 	}
 
-	newSecretID, err = s.repo.SaveSecret(ctx, secret)
+	err = s.repo.SaveSecret(ctx, secret)
 	if err != nil {
 		return nil, fmt.Errorf("%s: failed to save secret on storage with error %w", op, err)
 	}
 
-	secret.SetID(newSecretID)
+	secret.Data.SetID(newSecretID) // После сохранения секрета, нужно обновить ID секрета в его данных
 
 	return secret, nil
 }
@@ -100,12 +100,12 @@ func (s *Service) CreateSecretFile(
 		return nil, fmt.Errorf("%s: failed to get new domain model for file secret %w", op, err)
 	}
 
-	newSecretID, err = s.repo.SaveSecret(ctx, secret)
+	err = s.repo.SaveSecret(ctx, secret)
 	if err != nil {
 		return nil, fmt.Errorf("%s: failed to save secret on storage with error %w", op, err)
 	}
 
-	secret.SetID(newSecretID)
+	secret.Data.SetID(newSecretID) // После сохранения секрета, нужно обновить ID секрета в его данных
 
 	return secret, nil
 }
