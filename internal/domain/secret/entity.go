@@ -27,10 +27,11 @@ const (
 	TypePassword TypeOfSecret = "password"
 	// TypeCard секрет карта.
 	TypeCard TypeOfSecret = "card"
-	// TypeNote секрет текст.
-	TypeNote TypeOfSecret = "note"
 	// TypeBinary секрет бинарный.
 	TypeBinary TypeOfSecret = "binary"
+
+	// TypeNote секрет текст.
+	// TypeNote TypeOfSecret = "note"
 )
 
 // Scan реализует интерфейс sql.Scanner для чтения из БД.
@@ -67,8 +68,18 @@ type Secret struct {
 	Data      SecretData
 }
 
-func NewSecret(secretName string, secretType TypeOfSecret, userID int) *Secret {
-	now := time.Now()
+func NewSecret(secretName string, secretType TypeOfSecret, userID int) (*Secret, error) {
+	var now time.Time
+
+	now = time.Now()
+
+	switch secretType {
+	case TypePassword:
+	case TypeBinary:
+	case TypeCard:
+	default:
+		return nil, ErrInvalidSecretType
+	}
 
 	return &Secret{
 		ID:        -1,
@@ -78,7 +89,7 @@ func NewSecret(secretName string, secretType TypeOfSecret, userID int) *Secret {
 		CreatedAt: now,
 		UpdatedAt: now,
 		Version:   1,
-	}
+	}, nil
 }
 
 func (s *Secret) setData(data SecretData) {
@@ -174,7 +185,10 @@ func NewPasswordSecret(
 		err    error
 	)
 
-	secret = NewSecret(secretName, TypePassword, u.ID)
+	secret, err = NewSecret(secretName, TypePassword, u.ID)
+	if err != nil {
+		return nil, fmt.Errorf("%s: failed to get secret domain model %w", op, err)
+	}
 
 	data = NewPasswordData(secret, username, password, url, notes, metaData)
 
@@ -284,7 +298,10 @@ func NewCardSecret(
 		err    error
 	)
 
-	secret = NewSecret(secretName, TypeCard, u.ID)
+	secret, err = NewSecret(secretName, TypeCard, u.ID)
+	if err != nil {
+		return nil, fmt.Errorf("%s: failed to get secret domain model %w", op, err)
+	}
 
 	data = NewCardData(secret, number, owner, expireDate, cvv, notes, metaData)
 
@@ -389,10 +406,10 @@ func NewFileData(
 
 // NewFileSecret получение новой модели для секрета с паролем.
 func NewFileSecret(
+	u user.User,
 	secretName,
 	path, name, content string,
 	notes string,
-	u user.User,
 	metaData []byte,
 ) (*Secret, error) {
 	op := "domain.service.NewPasswordSecret"
@@ -403,7 +420,10 @@ func NewFileSecret(
 		err    error
 	)
 
-	secret = NewSecret(secretName, TypeBinary, u.ID)
+	secret, err = NewSecret(secretName, TypeBinary, u.ID)
+	if err != nil {
+		return nil, fmt.Errorf("%s: failed to get secret domain model %w", op, err)
+	}
 
 	data = NewFileData(secret, path, name, content, notes, metaData)
 

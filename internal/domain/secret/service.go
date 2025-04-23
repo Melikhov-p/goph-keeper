@@ -44,7 +44,7 @@ func (s *Service) CreateSecretPassword(
 
 	newSecretID, err = s.repo.SaveSecret(ctx, secret)
 	if err != nil {
-		return nil, fmt.Errorf("%s: failed to save secret in storage with error %w", op, err)
+		return nil, fmt.Errorf("%s: failed to save secret on storage with error %w", op, err)
 	}
 
 	secret.SetID(newSecretID)
@@ -69,6 +69,35 @@ func (s *Service) CreateSecretCard(
 	secret, err = NewCardSecret(u, secretName, number, owner, expireDate, cvv, notes, metaData)
 	if err != nil {
 		return nil, fmt.Errorf("%s: failed to get new domain model for card secret %w", op, err)
+	}
+
+	newSecretID, err = s.repo.SaveSecret(ctx, secret)
+	if err != nil {
+		return nil, fmt.Errorf("%s: failed to save secret on storage with error %w", op, err)
+	}
+
+	secret.SetID(newSecretID)
+
+	return secret, nil
+}
+
+func (s *Service) CreateSecretFile(
+	ctx context.Context,
+	u user.User,
+	secretName, fileName, content, notes string,
+	metaData []byte,
+) (*Secret, error) {
+	op := "domain.service.CreateSecretFile"
+
+	var (
+		secret      *Secret
+		newSecretID int
+		err         error
+	)
+
+	secret, err = NewFileSecret(u, secretName, s.cfg.Database.ExternalStoragePath, fileName, content, notes, metaData)
+	if err != nil {
+		return nil, fmt.Errorf("%s: failed to get new domain model for file secret %w", op, err)
 	}
 
 	newSecretID, err = s.repo.SaveSecret(ctx, secret)
