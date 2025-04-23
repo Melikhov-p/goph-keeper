@@ -1,12 +1,10 @@
 package secret
 
-import (
-	"context"
-)
+import "context"
 
 // Repository интерфейс для репозитория секретов.
 type Repository interface {
-	CreateSecretPassword(ctx context.Context) error
-	CreateSecretCard(ctx context.Context) error
-	CreateSecretFile(ctx context.Context) error
+	// SaveSecret сохраняет новый секрет в базу данных возвращая его ID или ошибку.
+	SaveSecret(ctx context.Context, secret *Secret) (int, error)
+	GetSecretsByName(ctx context.Context, secretName string, userID int) ([]*Secret, error)
 }

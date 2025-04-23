@@ -81,7 +81,7 @@ func NewSecret(secretName string, secretType TypeOfSecret, userID int) *Secret {
 	}
 }
 
-func (s *Secret) SetData(data SecretData) {
+func (s *Secret) setData(data SecretData) {
 	s.Data = data
 }
 
@@ -109,7 +109,7 @@ func newBaseSecretData(secretID int, notes string, metaData []byte) *baseSecretD
 	}
 }
 
-func (bs *baseSecretData) encrypt() error {
+func (bs *baseSecretData) Encrypt() error {
 	op := "domain.service.baseSecretData.encrypt"
 
 	var err error
@@ -122,7 +122,7 @@ func (bs *baseSecretData) encrypt() error {
 	return nil
 }
 
-func (bs *baseSecretData) decrypt() error {
+func (bs *baseSecretData) Decrypt() error {
 	op := "domain.service.baseSecretData.encrypt"
 
 	var err error
@@ -161,9 +161,9 @@ func NewPasswordData(
 
 // NewPasswordSecret получение новой модели для секрета с паролем.
 func NewPasswordSecret(
+	u user.User,
 	secretName,
 	username, password, url, notes string,
-	u user.User,
 	metaData []byte,
 ) (*Secret, error) {
 	op := "domain.service.NewPasswordSecret"
@@ -178,7 +178,7 @@ func NewPasswordSecret(
 
 	data = NewPasswordData(secret, username, password, url, notes, metaData)
 
-	secret.SetData(data)
+	secret.setData(data)
 
 	err = secret.Data.Encrypt()
 	if err != nil {
@@ -203,7 +203,7 @@ func (pd *PasswordData) Encrypt() error {
 		return fmt.Errorf("%s: failed to encrypt password %w", op, err)
 	}
 
-	err = pd.baseSecretData.encrypt()
+	err = pd.baseSecretData.Encrypt()
 	if err != nil {
 		return fmt.Errorf("%s: failed to encrypt base secret data %w", op, err)
 	}
@@ -228,7 +228,7 @@ func (pd *PasswordData) Decrypt() error {
 		return fmt.Errorf("%s: failed to encrypt password %w", op, err)
 	}
 
-	err = pd.baseSecretData.decrypt()
+	err = pd.baseSecretData.Decrypt()
 	if err != nil {
 		return fmt.Errorf("%s: failed to decrypt base secret data %w", op, err)
 	}
@@ -264,16 +264,16 @@ func NewCardData(
 		baseSecretData: base,
 		Number:         number,
 		Owner:          owner,
+		ExpireDate:     expireDate,
 		CVV:            cvv,
 	}
 }
 
 // NewCardSecret получение новой модели для секрета с паролем.
 func NewCardSecret(
-	secretName,
-	number, owner, expireDate, cvv string,
-	notes string,
 	u user.User,
+	secretName, number, owner, expireDate, cvv string,
+	notes string,
 	metaData []byte,
 ) (*Secret, error) {
 	op := "domain.service.NewPasswordSecret"
@@ -288,7 +288,7 @@ func NewCardSecret(
 
 	data = NewCardData(secret, number, owner, expireDate, cvv, notes, metaData)
 
-	secret.SetData(data)
+	secret.setData(data)
 
 	err = secret.Data.Encrypt()
 	if err != nil {
@@ -318,7 +318,7 @@ func (cd *CardData) Encrypt() error {
 		return fmt.Errorf("%s: failed to encrypt card cvv %w", op, err)
 	}
 
-	err = cd.baseSecretData.encrypt()
+	err = cd.baseSecretData.Encrypt()
 	if err != nil {
 		return fmt.Errorf("%s: failed to encrypt base secret data %w", op, err)
 	}
@@ -348,7 +348,7 @@ func (cd *CardData) Decrypt() error {
 		return fmt.Errorf("%s: failed to decrypt card cvv %w", op, err)
 	}
 
-	err = cd.baseSecretData.decrypt()
+	err = cd.baseSecretData.Decrypt()
 	if err != nil {
 		return fmt.Errorf("%s: failed to decrypt base secret data %w", op, err)
 	}
@@ -403,11 +403,11 @@ func NewFileSecret(
 		err    error
 	)
 
-	secret = NewSecret(secretName, TypeCard, u.ID)
+	secret = NewSecret(secretName, TypeBinary, u.ID)
 
 	data = NewFileData(secret, path, name, content, notes, metaData)
 
-	secret.SetData(data)
+	secret.setData(data)
 
 	err = secret.Data.Encrypt()
 	if err != nil {
@@ -427,7 +427,7 @@ func (fd *FileData) Encrypt() error {
 		return fmt.Errorf("%s: failed to encrypt file content %w", op, err)
 	}
 
-	err = fd.baseSecretData.encrypt()
+	err = fd.baseSecretData.Encrypt()
 	if err != nil {
 		return fmt.Errorf("%s: failed to encrypt base secret data %w", op, err)
 	}
@@ -447,7 +447,7 @@ func (fd *FileData) Decrypt() error {
 		return fmt.Errorf("%s: failed to decrypt file content %w", op, err)
 	}
 
-	err = fd.baseSecretData.decrypt()
+	err = fd.baseSecretData.Decrypt()
 	if err != nil {
 		return fmt.Errorf("%s: failed to decrypt base secret data %w", op, err)
 	}
