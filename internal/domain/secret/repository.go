@@ -1,11 +1,12 @@
 package secret
 
-import "context"
+import (
+	"context"
+)
 
 // Repository интерфейс для репозитория секретов.
 type Repository interface {
-	CreateSecret(ctx context.Context, secret *Secret)
-	CreateSecretPassword(ctx context.Context, secret *Secret, data *PasswordData)
-	CreateSecretCard(ctx context.Context, secret *Secret, data *CardData)
-	CreateSecretFile(ctx context.Context, secret *Secret, data *FileData)
+	CreateSecretPassword(ctx context.Context) error
+	CreateSecretCard(ctx context.Context) error
+	CreateSecretFile(ctx context.Context) error
 }

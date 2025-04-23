@@ -5,6 +5,6 @@ func Encrypt(secret []byte) (string, error) {
 	return "", nil
 }
 
-func EncryptAll() ([]string, []bool) {
-	return []string{"", ""}, []bool{true, true}
+func Decrypt(secret []byte) (string, error) {
+	return "", nil
 }
