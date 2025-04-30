@@ -104,3 +104,14 @@ func (s *Service) Update(ctx context.Context, u *User) error {
 
 	return nil
 }
+
+func (s *Service) GetUserByID(ctx context.Context, userID int) (*User, error) {
+	op := "domani.User.service.GetUserByID"
+
+	var (
+		user *User
+		err  error
+	)
+
+	user, err = s.repo.GetByID(ctx, userID)
+}

@@ -9,13 +9,16 @@ import (
 	"github.com/Melikhov-p/goph-keeper/internal/domain/user"
 )
 
+// ErrSecretNotFound секрет не найден
 var ErrSecretNotFound = errors.New("secret not found")
 
+// Service структура сервиса.
 type Service struct {
 	repo Repository
 	cfg  *config.Config
 }
 
+// NewService получение сервиса для секретов.
 func NewService(r Repository, c *config.Config) *Service {
 	return &Service{
 		repo: r,
@@ -23,18 +26,18 @@ func NewService(r Repository, c *config.Config) *Service {
 	}
 }
 
+// CreateSecretPassword создать секретный пароль.
 func (s *Service) CreateSecretPassword(
 	ctx context.Context,
-	u user.User,
+	u *user.User,
 	secretName, username, password, url, notes string,
 	metaData []byte,
 ) (*Secret, error) {
 	op := "domani.Service.CreateSecretPassword"
 
 	var (
-		secret      *Secret
-		newSecretID int
-		err         error
+		secret *Secret
+		err    error
 	)
 
 	secret, err = NewPasswordSecret(u, secretName, username, password, url, notes, metaData)
@@ -47,11 +50,10 @@ func (s *Service) CreateSecretPassword(
 		return nil, fmt.Errorf("%s: failed to save secret on storage with error %w", op, err)
 	}
 
-	secret.Data.SetID(newSecretID) // После сохранения секрета, нужно обновить ID секрета в его данных
-
 	return secret, nil
 }
 
+// CreateSecretCard создать секретные данные банковской карты.
 func (s *Service) CreateSecretCard(
 	ctx context.Context,
 	u user.User,
@@ -61,9 +63,8 @@ func (s *Service) CreateSecretCard(
 	op := "domain.service.CreateSecretCard"
 
 	var (
-		secret      *Secret
-		newSecretID int
-		err         error
+		secret *Secret
+		err    error
 	)
 
 	secret, err = NewCardSecret(u, secretName, number, owner, expireDate, cvv, notes, metaData)
@@ -76,26 +77,32 @@ func (s *Service) CreateSecretCard(
 		return nil, fmt.Errorf("%s: failed to save secret on storage with error %w", op, err)
 	}
 
-	secret.Data.SetID(newSecretID) // После сохранения секрета, нужно обновить ID секрета в его данных
-
 	return secret, nil
 }
 
+// CreateSecretFile создать новый секретный файл / двоичную информацию.
 func (s *Service) CreateSecretFile(
 	ctx context.Context,
 	u user.User,
-	secretName, fileName, content, notes string,
-	metaData []byte,
+	secretName, fileName, notes string,
+	content, metaData []byte,
 ) (*Secret, error) {
 	op := "domain.service.CreateSecretFile"
 
 	var (
-		secret      *Secret
-		newSecretID int
-		err         error
+		secret *Secret
+		err    error
 	)
 
-	secret, err = NewFileSecret(u, secretName, s.cfg.Database.ExternalStoragePath, fileName, content, notes, metaData)
+	secret, err = NewFileSecret(
+		u,
+		secretName,
+		s.cfg.Database.ExternalStoragePath,
+		fileName,
+		content,
+		notes,
+		metaData,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("%s: failed to get new domain model for file secret %w", op, err)
 	}
@@ -105,11 +112,10 @@ func (s *Service) CreateSecretFile(
 		return nil, fmt.Errorf("%s: failed to save secret on storage with error %w", op, err)
 	}
 
-	secret.Data.SetID(newSecretID) // После сохранения секрета, нужно обновить ID секрета в его данных
-
 	return secret, nil
 }
 
+// GetSecretsByName получить секреты по названию.
 func (s *Service) GetSecretsByName(
 	ctx context.Context,
 	u user.User,

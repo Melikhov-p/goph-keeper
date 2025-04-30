@@ -51,7 +51,7 @@ func New(cfg *config.Config) (*App, error) {
 	app.UserRepository = postgres.NewUserRepository(db)
 	app.UserService = user.NewService(app.UserRepository)
 
-	app.SecretRepository = postgres.NewSecretRepository(db)
+	app.SecretRepository = postgres.NewSecretRepository(db, app.Log)
 	app.SecretService = secret.NewService(app.SecretRepository, app.Cfg)
 
 	// Создание gRPC-сервера

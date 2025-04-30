@@ -2,6 +2,7 @@
 package secret
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"errors"
 	"fmt"
@@ -17,7 +18,7 @@ type TypeOfSecret string
 type SecretData interface {
 	Encrypt() error
 	Decrypt() error
-	SetID(newID int)
+	setDataFromRow(row *sql.Row) error
 }
 
 var ErrInvalidSecretType = errors.New("invalid secret type")
@@ -68,6 +69,7 @@ type Secret struct {
 	Data      SecretData
 }
 
+// NewSecret получить новый секрет.
 func NewSecret(secretName string, secretType TypeOfSecret, userID int) (*Secret, error) {
 	var now time.Time
 
@@ -96,9 +98,18 @@ func (s *Secret) setData(data SecretData) {
 	s.Data = data
 }
 
+// SetDataFromRow установить секрету секретные данные из строки из БД.
+func (s *Secret) SetDataFromRow(data *sql.Row) error {
+	err := s.Data.setDataFromRow(data)
+	if err != nil {
+		return fmt.Errorf("error setting data for %s", s.Type)
+	}
+
+	return nil
+}
+
 // Базовая структура данных секрета.
 type baseSecretData struct {
-	SecretID  int
 	Notes     string
 	MetaData  []byte
 	Encrypted bool
@@ -106,9 +117,8 @@ type baseSecretData struct {
 
 // newBaseSecretData получение модели с данными базовыми для всех секретных данных.
 // Изначально данные внутри секрета связываются с секретом ID = -1 после записи в БД ID меняется на присвоенный в базе.
-func newBaseSecretData(secretID int, notes string, metaData []byte) *baseSecretData {
+func newBaseSecretData(notes string, metaData []byte) *baseSecretData {
 	return &baseSecretData{
-		SecretID:  secretID,
 		Notes:     notes,
 		MetaData:  metaData,
 		Encrypted: false,
@@ -151,11 +161,10 @@ type PasswordData struct {
 
 // NewPasswordData получение новой модели для данных внутри секрета с паролем.
 func NewPasswordData(
-	secret *Secret,
 	username, password, url, notes string,
 	metaData []byte,
 ) *PasswordData {
-	base := newBaseSecretData(secret.ID, notes, metaData)
+	base := newBaseSecretData(notes, metaData)
 
 	return &PasswordData{
 		baseSecretData: base,
@@ -167,7 +176,7 @@ func NewPasswordData(
 
 // NewPasswordSecret получение новой модели для секрета с паролем.
 func NewPasswordSecret(
-	u user.User,
+	u *user.User,
 	secretName,
 	username, password, url, notes string,
 	metaData []byte,
@@ -185,7 +194,7 @@ func NewPasswordSecret(
 		return nil, fmt.Errorf("%s: failed to get secret domain model %w", op, err)
 	}
 
-	data = NewPasswordData(secret, username, password, url, notes, metaData)
+	data = NewPasswordData(username, password, url, notes, metaData)
 
 	secret.setData(data)
 
@@ -195,6 +204,14 @@ func NewPasswordSecret(
 	}
 
 	return secret, nil
+}
+
+func (pd *PasswordData) setDataFromRow(row *sql.Row) error {
+	if err := row.Scan(&pd.Username, &pd.Pass, &pd.URL, &pd.Notes, &pd.MetaData); err != nil {
+		return fmt.Errorf("failed to scan row for password data with error %w", err)
+	}
+	pd.Encrypted = true
+	return nil
 }
 
 func (pd *PasswordData) Encrypt() error {
@@ -247,10 +264,6 @@ func (pd *PasswordData) Decrypt() error {
 	return nil
 }
 
-func (pd *PasswordData) SetID(newID int) {
-	pd.SecretID = newID
-}
-
 // CardData структура для секрета с данными карты.
 type CardData struct {
 	*baseSecretData
@@ -262,12 +275,11 @@ type CardData struct {
 
 // NewCardData получение новой модели для данных внутри секрета с паролем.
 func NewCardData(
-	secret *Secret,
 	number, owner, expireDate, cvv string,
 	notes string,
 	metaData []byte,
 ) *CardData {
-	base := newBaseSecretData(secret.ID, notes, metaData)
+	base := newBaseSecretData(notes, metaData)
 
 	return &CardData{
 		baseSecretData: base,
@@ -298,7 +310,7 @@ func NewCardSecret(
 		return nil, fmt.Errorf("%s: failed to get secret domain model %w", op, err)
 	}
 
-	data = NewCardData(secret, number, owner, expireDate, cvv, notes, metaData)
+	data = NewCardData(number, owner, expireDate, cvv, notes, metaData)
 
 	secret.setData(data)
 
@@ -308,6 +320,14 @@ func NewCardSecret(
 	}
 
 	return secret, nil
+}
+
+func (cd *CardData) setDataFromRow(row *sql.Row) error {
+	if err := row.Scan(&cd.Number, &cd.Owner, &cd.ExpireDate, &cd.CVV, &cd.Notes, &cd.MetaData); err != nil {
+		return fmt.Errorf("failed to scan row for password data with error %w", err)
+	}
+	cd.Encrypted = true
+	return nil
 }
 
 func (cd *CardData) Encrypt() error {
@@ -370,26 +390,22 @@ func (cd *CardData) Decrypt() error {
 	return nil
 }
 
-func (cd *CardData) SetID(newID int) {
-	cd.SecretID = newID
-}
-
 // FileData структура для секретных файлов.
 type FileData struct {
 	*baseSecretData
 	Path    string
 	Name    string
-	Content string
+	Content []byte
 }
 
 // NewFileData получение новой модели для данных внутри секрета с паролем.
 func NewFileData(
-	secret *Secret,
-	path, name, content string,
+	path, name string,
+	content []byte,
 	notes string,
 	metaData []byte,
 ) *FileData {
-	base := newBaseSecretData(secret.ID, notes, metaData)
+	base := newBaseSecretData(notes, metaData)
 
 	return &FileData{
 		baseSecretData: base,
@@ -403,11 +419,12 @@ func NewFileData(
 func NewFileSecret(
 	u user.User,
 	secretName,
-	path, name, content string,
+	path, name string,
+	content []byte,
 	notes string,
 	metaData []byte,
 ) (*Secret, error) {
-	op := "domain.service.NewPasswordSecret"
+	op := "domain.service.NewFileSecret"
 
 	var (
 		secret *Secret
@@ -420,7 +437,7 @@ func NewFileSecret(
 		return nil, fmt.Errorf("%s: failed to get secret domain model %w", op, err)
 	}
 
-	data = NewFileData(secret, path, name, content, notes, metaData)
+	data = NewFileData(path, name, content, notes, metaData)
 
 	secret.setData(data)
 
@@ -432,15 +449,40 @@ func NewFileSecret(
 	return secret, nil
 }
 
+func (fd *FileData) setDataFromRow(row *sql.Row) error {
+	op := "domain.service.setDataFromRow"
+	if err := row.Scan(&fd.Path); err != nil {
+		return fmt.Errorf("failed to scan row for password data with error %w", err)
+	}
+
+	err := fd.getContentFromFile(fd.Path)
+	if err != nil {
+		return fmt.Errorf(
+			"%s: failed to get content file from file with path %s and error %w",
+			op, fd.Path, err)
+	}
+
+	fd.Encrypted = true
+	return nil
+}
+
+func (fd *FileData) getContentFromFile(path string) error {
+	return nil
+}
+
 func (fd *FileData) Encrypt() error {
 	op := "domain.service.PasswordData.encrypt"
 
-	var err error
+	var (
+		contentEnc string
+		err        error
+	)
 
-	fd.Content, err = encryptor.Encrypt([]byte(fd.Content))
+	contentEnc, err = encryptor.Encrypt(fd.Content)
 	if err != nil {
 		return fmt.Errorf("%s: failed to encrypt file content %w", op, err)
 	}
+	fd.Content = []byte(contentEnc)
 
 	err = fd.baseSecretData.Encrypt()
 	if err != nil {
@@ -455,12 +497,16 @@ func (fd *FileData) Encrypt() error {
 func (fd *FileData) Decrypt() error {
 	op := "domain.service.PasswordData.decrypt"
 
-	var err error
+	var (
+		contentDec string
+		err        error
+	)
 
-	fd.Content, err = encryptor.Encrypt([]byte(fd.Content))
+	contentDec, err = encryptor.Decrypt(fd.Content)
 	if err != nil {
 		return fmt.Errorf("%s: failed to decrypt file content %w", op, err)
 	}
+	fd.Content = []byte(contentDec)
 
 	err = fd.baseSecretData.Decrypt()
 	if err != nil {
@@ -470,8 +516,4 @@ func (fd *FileData) Decrypt() error {
 	fd.Encrypted = false
 
 	return nil
-}
-
-func (fd *FileData) SetID(newID int) {
-	fd.SecretID = newID
 }
