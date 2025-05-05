@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -10,6 +11,8 @@ import (
 	"github.com/Melikhov-p/goph-keeper/internal/repository/external_storage"
 	"go.uber.org/zap"
 )
+
+var invalidJsonErr = errors.New("invalid json meta data")
 
 // SecretRepository репозиторий секретов.
 type SecretRepository struct {
@@ -49,7 +52,7 @@ func (sr *SecretRepository) SaveSecret(ctx context.Context, s *secret.Secret) er
 		RETURNING id
 	`
 
-	row := tx.QueryRowContext(ctx, query, s.ID, s.Name, s.Type, s.CreatedAt, s.UpdatedAt, s.Version)
+	row := tx.QueryRowContext(ctx, query, s.UserID, s.Name, s.Type, s.CreatedAt, s.UpdatedAt, s.Version)
 	if err = row.Scan(&s.ID); err != nil {
 		return fmt.Errorf("%s: failed to query row for secret with error %w", op, err)
 	}
@@ -73,41 +76,64 @@ func (sr *SecretRepository) saveSecretData(ctx context.Context, tx *sql.Tx, s *s
 
 	switch s.Type {
 	case secret.TypePassword:
+		sr.log.Debug("new password secret", zap.Any("SECRET", s))
 		if data, ok := s.Data.(*secret.PasswordData); ok {
+			if data.MetaData == nil {
+				data.MetaData = []byte("{}")
+			}
+			if data.MetaData != nil && !json.Valid(data.MetaData) {
+				return invalidJsonErr
+			}
 			query = `
 					INSERT INTO password_data (secret_id, username, password_encrypted, url, notes_encrypted, metadata) 
 					VALUES ($1, $2, $3, $4, $5, $6)
 					`
-			_, err = tx.ExecContext(ctx, query, s.ID, data.Username, data.Pass, data.URL, data.Notes, data.MetaData)
+			_, err = tx.ExecContext(
+				ctx, query, s.ID, data.Username, data.Pass, data.URL, data.Notes,
+				data.MetaData)
 			break
 		}
 		return fmt.Errorf("%s: failed to assert secret data to PasswordData %w", op, err)
 	case secret.TypeCard:
 		if data, ok := s.Data.(*secret.CardData); ok {
+			if data.MetaData == nil {
+				data.MetaData = []byte("{}")
+			}
+			if data.MetaData != nil && !json.Valid(data.MetaData) {
+				return invalidJsonErr
+			}
 			query = `
 					INSERT INTO card_data (
 										   secret_id, card_number_encrypted, card_holder_encrypted, 
 										   expiry_date_encrypted, cvv_encrypted, notes_encrypted, metadata
 										   )
-					VALUES ($1, $2, $3, $4, $5, $6, $7)
+					VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)
 					`
 			_, err = tx.ExecContext(
 				ctx, query,
-				s.ID, data.Number, data.Owner, data.ExpireDate, data.CVV, data.Notes, data.MetaData,
+				s.ID, data.Number, data.Owner, data.ExpireDate, data.CVV,
+				data.Notes, data.MetaData,
 			)
 			break
 		}
 		return fmt.Errorf("%s: failed to assert secret data to CardData %w", op, err)
 	case secret.TypeBinary:
 		if data, ok := s.Data.(*secret.FileData); ok {
+			if data.MetaData == nil {
+				data.MetaData = []byte("{}")
+			}
+			if data.MetaData != nil && !json.Valid(data.MetaData) {
+				return invalidJsonErr
+			}
+
 			var checksum string
 			checksum, data.Path, err = external_storage.SaveFileData(ctx, s.UserID, data.Path, data.Content)
 
 			query = `
-					INSERT INTO external_storage (secret_id, storage_path, storage_type, checksum, created_at) 
-					VALUES ($1, $2, $3, $4, $5)
+					INSERT INTO external_storage (secret_id, storage_path, storage_type, filename, checksum, created_at) 
+					VALUES ($1, $2, $3, $4, $5, $6)
 					`
-			_, err = tx.ExecContext(ctx, query, s.ID, data.Path, "notes", checksum, s.CreatedAt)
+			_, err = tx.ExecContext(ctx, query, s.ID, data.Path, "note", data.Name, checksum, s.CreatedAt)
 			break
 		}
 		return fmt.Errorf("%s: failed to assert secret data to FileData %w", op, err)
@@ -140,7 +166,7 @@ func (sr *SecretRepository) GetSecretsByName(
 	secrets := make([]*secret.Secret, 0)
 
 	query := `
-		SELECT (id, user_id, name, type, created_at, updated_at, version) 
+		SELECT id, user_id, name, type, created_at, updated_at, version 
 		FROM secrets WHERE name = $1 AND user_id = $2
 	`
 
@@ -162,18 +188,18 @@ func (sr *SecretRepository) GetSecretsByName(
 	}
 
 	for _, s := range secrets {
+
 		switch s.Type {
 		case secret.TypePassword:
-			query = `SELECT (username, password_encrypted, url, notes_encrypted, metadata) 
+			query = `SELECT username, password_encrypted, url, notes_encrypted, metadata 
 					FROM password_data WHERE secret_id = $1`
 		case secret.TypeCard:
-			query = `SELECT (card_number_encrypted, card_holder_encrypted, 
+			query = `SELECT card_number_encrypted, card_holder_encrypted, 
 							expiry_date_encrypted, cvv_encrypted, notes_encrypted, metadata
-							)
 					FROM card_data WHERE secret_id = $1`
 		case secret.TypeBinary:
 			query = `
-					SELECT (storage_path) 
+					SELECT storage_path, filename
 					FROM external_storage WHERE secret_id = $1
 					`
 		default:

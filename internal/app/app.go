@@ -2,6 +2,7 @@
 package app
 
 import (
+	"encoding/hex"
 	"fmt"
 	"net"
 
@@ -35,6 +36,9 @@ type App struct {
 // New создание нового приложения.
 func New(cfg *config.Config) (*App, error) {
 	op := "app.New"
+
+	var err error
+
 	app := App{}
 	app.Cfg = cfg
 
@@ -47,6 +51,8 @@ func New(cfg *config.Config) (*App, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%s: error getting logger %w", op, err)
 	}
+
+	app.Log.Debug("generate new master key", zap.String("KEY", hex.EncodeToString(app.Cfg.Security.MasterKey)))
 
 	app.UserRepository = postgres.NewUserRepository(db)
 	app.UserService = user.NewService(app.UserRepository)
@@ -63,7 +69,9 @@ func New(cfg *config.Config) (*App, error) {
 	)
 
 	userServer := grpc2.NewUserServer(app.UserService, app.Log, app.Cfg)
+	secretServer := grpc2.NewSecretServer(app.SecretService, app.UserService, app.Cfg, app.Log)
 	pb.RegisterUserServiceServer(grpcServer, userServer)
+	pb.RegisterSecretServiceServer(grpcServer, secretServer)
 
 	app.GRPCServer = grpcServer
 

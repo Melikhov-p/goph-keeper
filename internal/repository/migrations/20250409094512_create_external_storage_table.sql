@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS external_storage (
                                   secret_id INTEGER NOT NULL REFERENCES secrets(id) ON DELETE CASCADE,
                                   storage_path TEXT NOT NULL,  -- Путь к файлу (относительный или полный)
                                   storage_type TEXT NOT NULL CHECK (storage_type IN ('note', 'binary')),
+                                  filename TEXT NOT NULL,
                                   checksum TEXT,  -- Контрольная сумма для проверки целостности
                                   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );

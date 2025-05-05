@@ -7,6 +7,7 @@ import (
 
 	"github.com/Melikhov-p/goph-keeper/internal/config"
 	"github.com/Melikhov-p/goph-keeper/internal/domain/user"
+	"github.com/Melikhov-p/goph-keeper/internal/repository/external_storage"
 )
 
 // ErrSecretNotFound секрет не найден
@@ -40,7 +41,7 @@ func (s *Service) CreateSecretPassword(
 		err    error
 	)
 
-	secret, err = NewPasswordSecret(u, secretName, username, password, url, notes, metaData)
+	secret, err = NewPasswordSecret(u, secretName, username, password, url, notes, metaData, s.cfg.Security.MasterKey)
 	if err != nil {
 		return nil, fmt.Errorf("%s: failed to get new domain model for password secret %w", op, err)
 	}
@@ -56,7 +57,7 @@ func (s *Service) CreateSecretPassword(
 // CreateSecretCard создать секретные данные банковской карты.
 func (s *Service) CreateSecretCard(
 	ctx context.Context,
-	u user.User,
+	u *user.User,
 	secretName, number, owner, expireDate, cvv, notes string,
 	metaData []byte,
 ) (*Secret, error) {
@@ -67,7 +68,7 @@ func (s *Service) CreateSecretCard(
 		err    error
 	)
 
-	secret, err = NewCardSecret(u, secretName, number, owner, expireDate, cvv, notes, metaData)
+	secret, err = NewCardSecret(u, secretName, number, owner, expireDate, cvv, notes, metaData, s.cfg.Security.MasterKey)
 	if err != nil {
 		return nil, fmt.Errorf("%s: failed to get new domain model for card secret %w", op, err)
 	}
@@ -83,7 +84,7 @@ func (s *Service) CreateSecretCard(
 // CreateSecretFile создать новый секретный файл / двоичную информацию.
 func (s *Service) CreateSecretFile(
 	ctx context.Context,
-	u user.User,
+	u *user.User,
 	secretName, fileName, notes string,
 	content, metaData []byte,
 ) (*Secret, error) {
@@ -102,6 +103,7 @@ func (s *Service) CreateSecretFile(
 		content,
 		notes,
 		metaData,
+		s.cfg.Security.MasterKey,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("%s: failed to get new domain model for file secret %w", op, err)
@@ -118,7 +120,7 @@ func (s *Service) CreateSecretFile(
 // GetSecretsByName получить секреты по названию.
 func (s *Service) GetSecretsByName(
 	ctx context.Context,
-	u user.User,
+	u *user.User,
 	secretName string,
 ) ([]*Secret, error) {
 	op := "domain.service.GetSecretByName"
@@ -135,6 +137,20 @@ func (s *Service) GetSecretsByName(
 
 	if len(secrets) == 0 {
 		return nil, ErrSecretNotFound
+	}
+
+	for _, secret := range secrets {
+		secret.Data.setMasterKey(s.cfg.Security.MasterKey)
+		if secret.Type == TypeBinary {
+			secret.Data.(*FileData).Content, err = external_storage.GetFileData(ctx, secret.Data.(*FileData).Path)
+			if err != nil {
+				return nil, fmt.Errorf("%s: failed to read content from file with error %w", op, err)
+			}
+		}
+		err = secret.DecryptData()
+		if err != nil {
+			return nil, fmt.Errorf("%s: failed to decrypt data with error %w", op, err)
+		}
 	}
 
 	return secrets, nil

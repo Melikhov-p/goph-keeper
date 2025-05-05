@@ -3,6 +3,7 @@ package interceptors
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Melikhov-p/goph-keeper/internal/auth"
 	contextkeys "github.com/Melikhov-p/goph-keeper/internal/context_keys"
@@ -34,7 +35,7 @@ func AuthInterceptor(secretKey string) grpc.UnaryServerInterceptor {
 
 		authHeader := md.Get("authorization")
 		if len(authHeader) == 0 {
-			return nil, status.Error(codes.Unauthenticated, "authorization token not provided")
+			return nil, status.Error(codes.Unauthenticated, "authorization token not provided: %v")
 		}
 
 		token := authHeader[0]
@@ -42,7 +43,7 @@ func AuthInterceptor(secretKey string) grpc.UnaryServerInterceptor {
 		// Валидация токена
 		userID, err := auth.GetUserIDbyToken(token, secretKey)
 		if err != nil {
-			return nil, status.Error(codes.Unauthenticated, "invalid token")
+			return nil, status.Error(codes.Unauthenticated, fmt.Sprintf("invalid token: %v", err))
 		}
 
 		// Добавляем userID в контекст

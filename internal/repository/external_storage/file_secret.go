@@ -64,3 +64,12 @@ func SaveFileData(_ context.Context, userID int, path string, content []byte) (s
 
 	return checksum, out.Name(), nil
 }
+
+func GetFileData(_ context.Context, path string) ([]byte, error) {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("error reading content from file %w", err)
+	}
+
+	return content, nil
+}

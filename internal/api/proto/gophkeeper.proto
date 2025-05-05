@@ -76,7 +76,7 @@ message GetSecretRequest {
   optional string name = 1;
 }
 
-message GetSecretResponse {
+message GetSecret {
   string Name = 1;
   SecretType type = 2;
   oneof data {
@@ -84,6 +84,10 @@ message GetSecretResponse {
     CardData card_data = 4;
     BinaryData binary_data = 5;
   }
+}
+
+message GetSecretResponse {
+  repeated GetSecret secrets = 1;
 }
 
 message PasswordData {

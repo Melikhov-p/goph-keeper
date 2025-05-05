@@ -42,6 +42,9 @@ func GetUserIDbyToken(tokenString string, secretKey string) (int, error) {
 		return []byte(secretKey), nil
 	})
 	if err != nil {
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return -1, errors.New("token expired")
+		}
 		return -1, fmt.Errorf("error parsing token with claims %w", err)
 	}
 

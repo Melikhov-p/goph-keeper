@@ -114,4 +114,9 @@ func (s *Service) GetUserByID(ctx context.Context, userID int) (*User, error) {
 	)
 
 	user, err = s.repo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("%s: failed to get user by ID with error %w", op, err)
+	}
+
+	return user, nil
 }

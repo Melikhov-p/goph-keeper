@@ -32,7 +32,8 @@ type LoggingConfig struct {
 
 // SecurityConfig структура конфига параметров безопасности.
 type SecurityConfig struct {
-	Pepper   string        `yaml:"pepper" env-required:"true"`
-	TokenKey string        `yaml:"token_key" env:"GK_TOKEN_KEY" env-required:"true"`
-	TokenTTL time.Duration `yaml:"token_ttl" env:"GK_TOKEN_TTL" env-default:"12h"`
+	Pepper    string        `yaml:"pepper" env-required:"true"`
+	TokenKey  string        `yaml:"token_key" env:"GK_TOKEN_KEY" env-required:"true"`
+	TokenTTL  time.Duration `yaml:"token_ttl" env:"GK_TOKEN_TTL" env-default:"12h"`
+	MasterKey []byte
 }
