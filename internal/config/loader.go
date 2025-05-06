@@ -8,6 +8,10 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
+const (
+	masterKeyByteLen = 32
+)
+
 // Load загрузка конфига.
 func Load() (*Config, error) {
 	op := "config.loader"
@@ -47,17 +51,18 @@ func fetchConfigPath() string {
 	return path
 }
 
-func (c *Config) GetMasterKey() (err error) {
-	//c.Security.MasterKey, err = encryptor.GenerateKey()
-	//if err != nil {
-	//	return fmt.Errorf("failed to decode master key from string %w", err)
-	//}
+// GetMasterKey получение мастер-ключа для (де-)шифрования.
+func (c *Config) GetMasterKey() error {
+	op := "config.Loader.GetMasterKey"
+
+	var err error
+
 	c.Security.MasterKey, err = hex.DecodeString("f8f2761b99775dac26e373e4942d6fd648f29325db7312158cc88205ff5e86b8")
 	if err != nil {
-		return err
+		return fmt.Errorf("%s: failed to decode string for master key with error %w", op, err)
 	}
 
-	if len(c.Security.MasterKey) != 32 {
+	if len(c.Security.MasterKey) != masterKeyByteLen {
 		return fmt.Errorf("decoded master key has invalid length: %d bytes, expected 32", len(c.Security.MasterKey))
 	}
 

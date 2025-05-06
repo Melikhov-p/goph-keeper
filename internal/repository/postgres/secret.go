@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var invalidJsonErr = errors.New("invalid json meta data")
+var errInvalidJSON = errors.New("invalid json meta data")
 
 // SecretRepository репозиторий секретов.
 type SecretRepository struct {
@@ -20,6 +20,7 @@ type SecretRepository struct {
 	log *zap.Logger
 }
 
+// NewSecretRepository новый репозиторий для секретов.
 func NewSecretRepository(db *sql.DB, l *zap.Logger) *SecretRepository {
 	return &SecretRepository{db: db, log: l}
 }
@@ -82,7 +83,7 @@ func (sr *SecretRepository) saveSecretData(ctx context.Context, tx *sql.Tx, s *s
 				data.MetaData = []byte("{}")
 			}
 			if data.MetaData != nil && !json.Valid(data.MetaData) {
-				return invalidJsonErr
+				return errInvalidJSON
 			}
 			query = `
 					INSERT INTO password_data (secret_id, username, password_encrypted, url, notes_encrypted, metadata) 
@@ -100,7 +101,7 @@ func (sr *SecretRepository) saveSecretData(ctx context.Context, tx *sql.Tx, s *s
 				data.MetaData = []byte("{}")
 			}
 			if data.MetaData != nil && !json.Valid(data.MetaData) {
-				return invalidJsonErr
+				return errInvalidJSON
 			}
 			query = `
 					INSERT INTO card_data (
@@ -123,11 +124,14 @@ func (sr *SecretRepository) saveSecretData(ctx context.Context, tx *sql.Tx, s *s
 				data.MetaData = []byte("{}")
 			}
 			if data.MetaData != nil && !json.Valid(data.MetaData) {
-				return invalidJsonErr
+				return errInvalidJSON
 			}
 
 			var checksum string
 			checksum, data.Path, err = external_storage.SaveFileData(ctx, s.UserID, data.Path, data.Content)
+			if err != nil {
+				return fmt.Errorf("%s: failed to save binary content to file with error %w", op, err)
+			}
 
 			query = `
 					INSERT INTO external_storage (secret_id, storage_path, storage_type, filename, checksum, created_at) 
@@ -177,6 +181,9 @@ func (sr *SecretRepository) GetSecretsByName(
 		}
 		return nil, fmt.Errorf("%s: failed to query context with error %w", op, err)
 	}
+	defer func() {
+		_ = rows.Close()
+	}()
 
 	for rows.Next() {
 		var s secret.Secret
@@ -187,8 +194,11 @@ func (sr *SecretRepository) GetSecretsByName(
 		secrets = append(secrets, &s)
 	}
 
-	for _, s := range secrets {
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("%s: got rows.Err: %w", op, err)
+	}
 
+	for _, s := range secrets {
 		switch s.Type {
 		case secret.TypePassword:
 			query = `SELECT username, password_encrypted, url, notes_encrypted, metadata 
@@ -209,6 +219,10 @@ func (sr *SecretRepository) GetSecretsByName(
 		row := sr.db.QueryRowContext(ctx, query, s.ID)
 		if err = s.SetDataFromRow(row); err != nil {
 			return nil, fmt.Errorf("%s: failed to set data from row with error %w", op, err)
+		}
+
+		if err = row.Err(); err != nil {
+			return nil, fmt.Errorf("%s: got row.Err: %w", op, err)
 		}
 	}
 

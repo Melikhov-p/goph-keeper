@@ -6,6 +6,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/Melikhov-p/goph-keeper/internal/domain/user"
@@ -15,6 +16,7 @@ import (
 // TypeOfSecret тип секрета.
 type TypeOfSecret string
 
+// SecretData интерфейс секретных данных внутри секрета.
 type SecretData interface {
 	Encrypt() error
 	Decrypt() error
@@ -22,7 +24,7 @@ type SecretData interface {
 	setMasterKey(mk []byte)
 }
 
-var ErrInvalidSecretType = errors.New("invalid secret type")
+var errInvalidSecretType = errors.New("invalid secret type")
 
 const (
 	// TypePassword секрет пароль.
@@ -69,16 +71,14 @@ type Secret struct {
 
 // NewSecret получить новый секрет.
 func NewSecret(secretName string, secretType TypeOfSecret, userID int) (*Secret, error) {
-	var now time.Time
-
-	now = time.Now()
+	now := time.Now()
 
 	switch secretType {
 	case TypePassword:
 	case TypeBinary:
 	case TypeCard:
 	default:
-		return nil, ErrInvalidSecretType
+		return nil, errInvalidSecretType
 	}
 
 	return &Secret{
@@ -121,6 +121,7 @@ func (s *Secret) SetDataFromRow(data *sql.Row) error {
 	return nil
 }
 
+// DecryptData расшифровать данные.
 func (s *Secret) DecryptData() error {
 	err := s.Data.Decrypt()
 	if err != nil {
@@ -262,7 +263,7 @@ func newEmptyPasswordData() *PasswordData {
 
 func (pd *PasswordData) setMasterKey(mk []byte) {
 	pd.masterKey = mk
-	pd.baseSecretData.masterKey = mk
+	pd.baseSecretData.setMasterKey(mk)
 }
 
 func (pd *PasswordData) setDataFromRow(row *sql.Row) error {
@@ -273,6 +274,7 @@ func (pd *PasswordData) setDataFromRow(row *sql.Row) error {
 	return nil
 }
 
+// Encrypt шифрование данных секрета.
 func (pd *PasswordData) Encrypt() error {
 	op := "domain.service.PasswordData.encrypt"
 
@@ -298,6 +300,7 @@ func (pd *PasswordData) Encrypt() error {
 	return nil
 }
 
+// Decrypt расшифровать данные.
 func (pd *PasswordData) Decrypt() error {
 	op := "domain.service.PasswordData.decrypt"
 
@@ -363,7 +366,7 @@ func newEmptyCardData() *CardData {
 
 func (cd *CardData) setMasterKey(mk []byte) {
 	cd.masterKey = mk
-	cd.baseSecretData.masterKey = mk
+	cd.baseSecretData.setMasterKey(mk)
 }
 
 // NewCardSecret получение новой модели для секрета с паролем.
@@ -407,8 +410,9 @@ func (cd *CardData) setDataFromRow(row *sql.Row) error {
 	return nil
 }
 
+// Encrypt шифрование данных.
 func (cd *CardData) Encrypt() error {
-	op := "domain.service.PasswordData.encrypt"
+	op := "domain.service.CardData.encrypt"
 
 	var err error
 
@@ -437,6 +441,7 @@ func (cd *CardData) Encrypt() error {
 	return nil
 }
 
+// Decrypt дешифровка данных.
 func (cd *CardData) Decrypt() error {
 	op := "domain.service.PasswordData.decrypt"
 
@@ -506,7 +511,7 @@ func newEmptyFileData() *FileData {
 
 func (fd *FileData) setMasterKey(mk []byte) {
 	fd.masterKey = mk
-	fd.baseSecretData.masterKey = mk
+	fd.baseSecretData.setMasterKey(mk)
 }
 
 // NewFileSecret получение новой модели для секрета с паролем.
@@ -547,11 +552,13 @@ func NewFileSecret(
 func (fd *FileData) setDataFromRow(row *sql.Row) error {
 	op := "domain.service.setDataFromRow"
 
-	if err := row.Scan(&fd.Path, &fd.Name); err != nil {
+	var err error
+
+	if err = row.Scan(&fd.Path, &fd.Name); err != nil {
 		return fmt.Errorf("failed to scan row for password data with error %w", err)
 	}
 
-	err := fd.getContentFromFile(fd.Path)
+	fd.Content, err = fd.GetContentFromFile()
 	if err != nil {
 		return fmt.Errorf(
 			"%s: failed to get content file from file with path %s and error %w",
@@ -562,12 +569,19 @@ func (fd *FileData) setDataFromRow(row *sql.Row) error {
 	return nil
 }
 
-func (fd *FileData) getContentFromFile(path string) error {
-	return nil
+// GetContentFromFile получение содержимого секретного файла.
+func (fd *FileData) GetContentFromFile() ([]byte, error) {
+	content, err := os.ReadFile(fd.Path)
+	if err != nil {
+		return nil, fmt.Errorf("error reading content from file %w", err)
+	}
+
+	return content, nil
 }
 
+// Encrypt шифрование данных.
 func (fd *FileData) Encrypt() error {
-	op := "domain.service.PasswordData.encrypt"
+	op := "domain.service.FileData.encrypt"
 
 	var (
 		contentEnc string
@@ -590,6 +604,7 @@ func (fd *FileData) Encrypt() error {
 	return nil
 }
 
+// Decrypt дешифровка данных.
 func (fd *FileData) Decrypt() error {
 	op := "domain.service.FileData.decrypt"
 

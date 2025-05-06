@@ -105,6 +105,7 @@ func (s *Service) Update(ctx context.Context, u *User) error {
 	return nil
 }
 
+// GetUserByID получение пользователя по ID.
 func (s *Service) GetUserByID(ctx context.Context, userID int) (*User, error) {
 	op := "domani.User.service.GetUserByID"
 

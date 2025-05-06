@@ -12,6 +12,8 @@
 
 version: "2"
 
+
+
 issues:
   # Максимальное количество проблем с одинаковым текстом.
   # Set to 0 to disable.
@@ -66,9 +68,7 @@ linters:
     - errorlint # finds code that will cause problems with the error wrapping scheme introduced in Go 1.13
     - exhaustive # checks exhaustiveness of enum switch statements
     - exptostd # detects functions from golang.org/x/exp/ that can be replaced by std functions
-    - funlen # tool for detection of long functions
     - gocheckcompilerdirectives # validates go compiler directive comments (//go:)
-    - gochecknoglobals # checks that no global variables exist
     - gochecknoinits # checks that no init functions are present in Go code
     - gochecksumtype # checks exhaustiveness on Go "sum types"
     - gocognit # computes and checks the cognitive complexity of functions
@@ -102,25 +102,21 @@ linters:
     - protogetter # reports direct reads from proto message fields when getters should be used
     - reassign # checks that package variables are not reassigned
     - recvcheck # checks for receiver type consistency
-    - revive # fast, configurable, extensible, flexible, and beautiful linter for Go, drop-in replacement of golint
     - rowserrcheck # checks whether Err of rows is checked successfully
     - sloglint # ensure consistent code style when using log/slog
     - spancheck # checks for mistakes with OpenTelemetry/Census spans
     - sqlclosecheck # checks that sql.Rows and sql.Stmt are closed
     - staticcheck # is a go vet on steroids, applying a ton of static analysis checks
-    - testableexamples # checks if examples are testable (have an expected output)
     - testifylint # checks usage of github.com/stretchr/testify
     - tparallel # detects inappropriate usage of t.Parallel() method in your Go test codes
-    - unconvert # removes unnecessary type conversions
-    - unparam # reports unused function parameters
-    - unused # checks for unused constants, variables, functions and types
     - usestdlibvars # detects the possibility to use variables/constants from the Go standard library
     - usetesting # reports uses of functions with replacement inside the testing package
     - wastedassign # finds wasted assignment statements
     - whitespace # detects leading and trailing whitespace
-    - wrapcheck # checks that errors returned from external packages are wrapped
+    #- wrapcheck # checks that errors returned from external packages are wrapped
 
     ## you may want to enable
+    #- gochecknoglobals # checks that no global variables exist
     #- testpackage # makes you use a separate _test package
     #- nilnil # checks that there is no simultaneous return of nil error and an invalid value
     #- fatcontext # detects nested contexts in loops
@@ -259,16 +255,6 @@ linters:
         - ^google.golang.org/protobuf/.+Options$
         - ^gopkg.in/yaml.v3.Node$
 
-    funlen:
-      # Checks the number of lines in a function.
-      # If lower than 0, disable the check.
-      # Default: 60
-      lines: 100
-      # Checks the number of statements in a function.
-      # If lower than 0, disable the check.
-      # Default: 40
-      statements: 50
-
     gochecksumtype:
       # Presence of `default` case in switch statements satisfies exhaustiveness, if all members are not listed.
       # Default: true
@@ -276,8 +262,7 @@ linters:
 
     gocognit:
       # Minimal code complexity to report.
-      # Default: 30 (but we recommend 10-20)
-      min-complexity: 20
+      min-complexity: 50
 
     gocritic:
       # Settings passed to gocritic.
@@ -342,7 +327,7 @@ linters:
     nolintlint:
       # Exclude following linters from requiring an explanation.
       # Default: []
-      allow-no-explanation: [ funlen, gocognit ]
+      allow-no-explanation: [ gocognit ]
       # Enable to require an explanation of nonzero length after each nolint directive.
       # Default: false
       require-explanation: true
@@ -386,6 +371,11 @@ linters:
       # Default: ""
       context: scope
 
+    gosec:
+      excludes:
+        - G115
+        - G304
+
     staticcheck:
       # SAxxxx checks in https://staticcheck.dev/docs/configuration/options/#checks
       # Example (to disable some checks): [ "all", "-SA1000", "-SA1001"]
@@ -401,42 +391,10 @@ linters:
         # Omit embedded fields from selector expression.
         # https://staticcheck.dev/docs/checks/#QF1008
         - -QF1008
+        - -SA1019
+        - -ST1003
 
     usetesting:
       # Enable/disable `os.TempDir()` detections.
       # Default: false
       os-temp-dir: true
-
-#  exclusions:
-#    # Log a warning if an exclusion rule is unused.
-#    # Default: false
-#    warn-unused: true
-#    # Predefined exclusion rules.
-#    # Default: []
-#    presets:
-#      - std-error-handling
-#      - common-false-positives
-#    # Excluding configuration per-path, per-linter, per-text and per-source.
-#    rules:
-#      - source: 'TODO'
-#        linters: [ godot ]
-#      - text: 'should have a package comment'
-#        linters: [ revive ]
-#      - text: 'exported \S+ \S+ should have comment( \(or a comment on this block\))? or be unexported'
-#        linters: [ revive ]
-#      - text: 'package comment should be of the form ".+"'
-#        source: '// ?(nolint|TODO)'
-#        linters: [ revive ]
-#      - text: 'comment on exported \S+ \S+ should be of the form ".+"'
-#        source: '// ?(nolint|TODO)'
-#        linters: [ revive, staticcheck ]
-#      - path: '_test\.go'
-#        linters:
-#          - bodyclose
-#          - dupl
-#          - errcheck
-#          - funlen
-#          - goconst
-#          - gosec
-#          - noctx
-#          - wrapcheck

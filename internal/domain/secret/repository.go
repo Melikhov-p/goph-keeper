@@ -8,4 +8,6 @@ type Repository interface {
 	SaveSecret(ctx context.Context, secret *Secret) error
 	// GetSecretsByName поиск среди всех секретов по названию секрета.
 	GetSecretsByName(ctx context.Context, secretName string, userID int) ([]*Secret, error)
+	// GetAllUserSecrets получение всех секретов пользователя (без данных).
+	GetAllUserSecrets(ctx context.Context, userID int) ([]*Secret, error)
 }

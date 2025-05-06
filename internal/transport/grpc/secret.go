@@ -20,8 +20,6 @@ const (
 	secretTypeBinary
 )
 
-var invalidSecretTypeErr = status.Error(codes.InvalidArgument, "invalid secret type")
-
 // SecretService методы создания новых секретов.
 type SecretService interface {
 	CreateSecretPassword(
@@ -49,6 +47,7 @@ type SecretService interface {
 	) ([]*secret.Secret, error)
 }
 
+// UserProvider интерфейс провайдера пользователей.
 type UserProvider interface {
 	GetUserByID(ctx context.Context, userID int) (*user.User, error)
 }
@@ -99,11 +98,12 @@ func (ss *SecretServer) CreateSecret(ctx context.Context, in *pb.CreateSecretReq
 		return nil, status.Error(codes.Unauthenticated, "user with provided ID not found")
 	}
 
-	switch in.Type {
+	switch in.GetType() {
 	case secretTypePassword:
 		data := in.GetPasswordData()
 		s, err = ss.secretService.CreateSecretPassword(
-			ctx, u, in.Name, data.Username, data.Password, data.Url, *data.Notes, data.MetaData,
+			ctx, u,
+			in.GetName(), data.GetUsername(), data.GetPassword(), data.GetUrl(), data.GetNotes(), data.GetMetaData(),
 		)
 		if err != nil {
 			ss.log.Error("error creating secret password", zap.Error(err))
@@ -114,7 +114,10 @@ func (ss *SecretServer) CreateSecret(ctx context.Context, in *pb.CreateSecretReq
 	case secretTypeCard:
 		data := in.GetCardData()
 		s, err = ss.secretService.CreateSecretCard(
-			ctx, u, in.Name, data.Number, data.Owner, data.ExpireDate, data.CVV, *data.Notes, data.MetaData,
+			ctx, u,
+			in.GetName(), data.GetNumber(), data.GetOwner(),
+			data.GetExpireDate(), data.GetCVV(), data.GetNotes(),
+			data.GetMetaData(),
 		)
 		if err != nil {
 			ss.log.Error("error creating secret card", zap.Error(err))
@@ -125,7 +128,7 @@ func (ss *SecretServer) CreateSecret(ctx context.Context, in *pb.CreateSecretReq
 	case secretTypeBinary:
 		data := in.GetBinaryData()
 		s, err = ss.secretService.CreateSecretFile(
-			ctx, u, in.Name, data.Filename, *data.Notes, data.Content, data.MetaData,
+			ctx, u, in.GetName(), data.GetFilename(), data.GetNotes(), data.GetContent(), data.GetMetaData(),
 		)
 		if err != nil {
 			ss.log.Error("error creating secret file", zap.Error(err))
@@ -134,13 +137,14 @@ func (ss *SecretServer) CreateSecret(ctx context.Context, in *pb.CreateSecretReq
 
 		res.Id = int64(s.ID)
 	default:
-		ss.log.Warn("invalid secret type", zap.Any("type", in.Type))
+		ss.log.Warn("invalid secret type", zap.Any("type", in.GetType()))
 		return nil, fmt.Errorf("%s: bad request: %w", op, err)
 	}
 
 	return &res, nil
 }
 
+// GetSecret получение секрета из хранилища.
 func (ss *SecretServer) GetSecret(ctx context.Context, in *pb.GetSecretRequest) (*pb.GetSecretResponse, error) {
 	var (
 		res        pb.GetSecretResponse

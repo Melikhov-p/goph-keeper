@@ -17,18 +17,21 @@ import (
 )
 
 const (
-	serverAddress = "localhost:50051"
+	cardNumberSafeLen = 4
+	serverAddress     = "localhost:50051"
 )
 
 var (
-	conn         *grpc.ClientConn
 	userClient   pb.UserServiceClient
 	secretClient pb.SecretServiceClient
 	token        string
 )
 
 func main() {
-	var err error
+	var (
+		err  error
+		conn *grpc.ClientConn
+	)
 	conn, err = grpc.Dial(serverAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		fmt.Printf("did not connect: %v\n", err)
@@ -124,7 +127,7 @@ func registerUser() {
 		return
 	}
 
-	fmt.Printf("Registered successfully. User ID: %d\n", res.User.Id)
+	fmt.Printf("Registered successfully. User ID: %d\n", res.GetUser().GetId())
 }
 
 func loginUser() {
@@ -169,7 +172,7 @@ func loginUser() {
 	// Получаем токен из заголовков
 	if authHeaders := header.Get("authorization"); len(authHeaders) > 0 {
 		token = authHeaders[0]
-		fmt.Printf("\nLogged in successfully. Welcome, %s!\n", res.User.Login)
+		fmt.Printf("\nLogged in successfully. Welcome, %s!\n", res.GetUser().GetLogin())
 	} else {
 		fmt.Println("\nWarning: Server didn't return authorization token")
 	}
@@ -329,7 +332,7 @@ func createSecret() {
 		return
 	}
 
-	fmt.Printf("Secret created successfully with ID: %d\n", res.Id)
+	fmt.Printf("Secret created successfully with ID: %d\n", res.GetId())
 }
 
 func getSecrets() {
@@ -351,43 +354,43 @@ func getSecrets() {
 		return
 	}
 
-	if len(res.Secrets) == 0 {
+	if len(res.GetSecrets()) == 0 {
 		fmt.Println("No secrets found")
 		return
 	}
 
 	fmt.Println("\nSecrets:")
-	for i, secret := range res.Secrets {
-		fmt.Printf("\n%d. Name: %s, Type: %s\n", i+1, secret.Name, secret.Type.String())
+	for i, secret := range res.GetSecrets() {
+		fmt.Printf("\n%d. Name: %s, Type: %s\n", i+1, secret.GetName(), secret.GetType().String())
 
-		switch secret.Data.(type) {
+		switch secret.GetData().(type) {
 		case *pb.GetSecret_PasswordData:
 			data := secret.GetPasswordData()
-			fmt.Printf("   Username: %s\n", data.Username)
-			fmt.Printf("   Password: %s\n", data.Password)
-			fmt.Printf("   URL: %s\n", data.Url)
-			if *data.Notes != "" {
-				fmt.Printf("   Notes: %s\n", *data.Notes)
+			fmt.Printf("   Username: %s\n", data.GetUsername())
+			fmt.Printf("   Password: %s\n", data.GetPassword())
+			fmt.Printf("   URL: %s\n", data.GetUrl())
+			if data.GetNotes() != "" {
+				fmt.Printf("   Notes: %s\n", data.GetNotes())
 			}
 		case *pb.GetSecret_CardData:
 			data := secret.GetCardData()
-			fmt.Printf("   Owner: %s\n", data.Owner)
-			fmt.Printf("   Number: %s\n", maskCardNumber(data.Number))
-			fmt.Printf("   CVV: %s\n", data.CVV)
-			fmt.Printf("   Expire Date: %s\n", data.ExpireDate)
-			if *data.Notes != "" {
-				fmt.Printf("   Notes: %s\n", *data.Notes)
+			fmt.Printf("   Owner: %s\n", data.GetOwner())
+			fmt.Printf("   Number: %s\n", maskCardNumber(data.GetNumber()))
+			fmt.Printf("   CVV: %s\n", data.GetCVV())
+			fmt.Printf("   Expire Date: %s\n", data.GetExpireDate())
+			if data.GetNotes() != "" {
+				fmt.Printf("   Notes: %s\n", data.GetNotes())
 			}
 		case *pb.GetSecret_BinaryData:
 			data := secret.GetBinaryData()
-			fmt.Printf("   Filename: %s\n\n", data.Filename)
+			fmt.Printf("   Filename: %s\n\n", data.GetFilename())
 			fmt.Printf("-------\n\n")
-			fmt.Printf("   Content:\n %s\n\n", string(data.Content))
+			fmt.Printf("   Content:\n %s\n\n", string(data.GetContent()))
 			fmt.Printf("-------\n")
 
-			fmt.Printf("   Size: %d bytes\n", len(data.Content))
-			if *data.Notes != "" {
-				fmt.Printf("   Notes: %s\n", *data.Notes)
+			fmt.Printf("   Size: %d bytes\n", len(data.GetContent()))
+			if data.GetNotes() != "" {
+				fmt.Printf("   Notes: %s\n", data.GetNotes())
 			}
 		}
 	}
@@ -398,7 +401,7 @@ func withToken(ctx context.Context) context.Context {
 }
 
 func maskCardNumber(number string) string {
-	if len(number) <= 4 {
+	if len(number) <= cardNumberSafeLen {
 		return number
 	}
 	return "**** **** **** " + number[len(number)-4:]

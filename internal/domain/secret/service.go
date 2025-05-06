@@ -7,10 +7,9 @@ import (
 
 	"github.com/Melikhov-p/goph-keeper/internal/config"
 	"github.com/Melikhov-p/goph-keeper/internal/domain/user"
-	"github.com/Melikhov-p/goph-keeper/internal/repository/external_storage"
 )
 
-// ErrSecretNotFound секрет не найден
+// ErrSecretNotFound секрет не найден.
 var ErrSecretNotFound = errors.New("secret not found")
 
 // Service структура сервиса.
@@ -141,12 +140,6 @@ func (s *Service) GetSecretsByName(
 
 	for _, secret := range secrets {
 		secret.Data.setMasterKey(s.cfg.Security.MasterKey)
-		if secret.Type == TypeBinary {
-			secret.Data.(*FileData).Content, err = external_storage.GetFileData(ctx, secret.Data.(*FileData).Path)
-			if err != nil {
-				return nil, fmt.Errorf("%s: failed to read content from file with error %w", op, err)
-			}
-		}
 		err = secret.DecryptData()
 		if err != nil {
 			return nil, fmt.Errorf("%s: failed to decrypt data with error %w", op, err)

@@ -12,32 +12,27 @@ import (
 	"strings"
 )
 
-var (
-	ErrInvalidKeyLength = errors.New("invalid key length: must be 32 bytes")
-	ErrDecryptionFailed = errors.New("decryption failed")
+const (
+	masterKeyByteLen = 32
 )
 
-// GenerateKey генерирует случайный 32-байтный ключ для AES-256
-func GenerateKey() ([]byte, error) {
-	key := make([]byte, 32)
-	if _, err := rand.Read(key); err != nil {
-		return nil, err
-	}
-	return key, nil
-}
+var (
+	errInvalidKeyLength = errors.New("invalid key length: must be masterKeyByteLen bytes")
+	errDecryptionFailed = errors.New("decryption failed")
+)
 
 // EncryptWithMasterKey шифрует данные с использованием мастер-ключа.
-// Принимает: plaintext - данные для шифрования, masterKey - 32-байтный ключ.
+// Принимает: plaintext - данные для шифрования, masterKey - masterKeyByteLen-байтный ключ.
 // Возвращает: строку в формате "encryptedKey:encryptedData" или ошибку.
 func EncryptWithMasterKey(plaintext []byte, masterKey []byte) (string, error) {
 	op := "encrypt.EncryptWithMasterKey"
 
-	if len(masterKey) != 32 {
-		return "", fmt.Errorf("%s: master key %w", op, ErrInvalidKeyLength)
+	if len(masterKey) != masterKeyByteLen {
+		return "", fmt.Errorf("%s: master key %w", op, errInvalidKeyLength)
 	}
 
 	// Генерируем случайный ключ для данных
-	dataKey := make([]byte, 32)
+	dataKey := make([]byte, masterKeyByteLen)
 	if _, err := rand.Read(dataKey); err != nil {
 		return "", fmt.Errorf("failed to generate data key: %w", err)
 	}
@@ -57,17 +52,19 @@ func EncryptWithMasterKey(plaintext []byte, masterKey []byte) (string, error) {
 	return encryptedKey + ":" + encryptedData, nil
 }
 
-// DecryptWithMasterKey расшифровывает данные, используя мастер-ключ
+// DecryptWithMasterKey расшифровывает данные, используя мастер-ключ.
 func DecryptWithMasterKey(encoded []byte, masterKey []byte) (string, error) {
 	op := "encrypt.DecryptWithMasterKey"
 
-	if len(masterKey) != 32 {
-		return "", fmt.Errorf("%s: masterKey %w", op, ErrInvalidKeyLength)
+	keyPartsCount := 2
+
+	if len(masterKey) != masterKeyByteLen {
+		return "", fmt.Errorf("%s: masterKey %w", op, errInvalidKeyLength)
 	}
 
 	parts := strings.Split(string(encoded), ":")
-	if len(parts) != 2 {
-		return "", ErrDecryptionFailed
+	if len(parts) != keyPartsCount {
+		return "", errDecryptionFailed
 	}
 
 	// Расшифровываем ключ данных (получаем []byte)
@@ -77,8 +74,8 @@ func DecryptWithMasterKey(encoded []byte, masterKey []byte) (string, error) {
 	}
 
 	// Проверяем длину ключа
-	if len(dataKeyBytes) != 32 {
-		return "", fmt.Errorf("%s: dataKeyBytes %w", op, ErrInvalidKeyLength)
+	if len(dataKeyBytes) != masterKeyByteLen {
+		return "", fmt.Errorf("%s: dataKeyBytes %w", op, errInvalidKeyLength)
 	}
 
 	// Расшифровываем данные
@@ -90,56 +87,62 @@ func DecryptWithMasterKey(encoded []byte, masterKey []byte) (string, error) {
 	return plaintext, nil
 }
 
-// encrypt выполняет AES-GCM шифрование
+// encrypt выполняет AES-GCM шифрование.
 func encrypt(plaintext []byte, key []byte) (string, error) {
+	op := "encryptor.Encrypt.encrypt"
+
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%s: failed to NewCipher with error %w", op, err)
 	}
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%s: failed to NewGCM with error %w", op, err)
 	}
 
 	nonce := make([]byte, gcm.NonceSize())
 	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
-		return "", err
+		return "", fmt.Errorf("%s: failed to read full with error %w", op, err)
 	}
 
 	ciphertext := gcm.Seal(nonce, nonce, plaintext, nil)
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
-// decrypt выполняет AES-GCM дешифрование и возвращает строку
+// decrypt выполняет AES-GCM дешифрование и возвращает строку.
 func decrypt(encodedCiphertext string, key []byte) (string, error) {
+	op := "encryptor.Encrypt.decrypt"
+
 	plaintext, err := decryptToBytes(encodedCiphertext, key)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%s: failed to decryptToBytes with error %w", op, err)
 	}
 	return string(plaintext), nil
 }
 
-// decryptToBytes выполняет AES-GCM дешифрование и возвращает []byte
+// decryptToBytes выполняет AES-GCM дешифрование и возвращает []byte.
 func decryptToBytes(encodedCiphertext string, key []byte) ([]byte, error) {
+	op := "encryptor.Encrypt.decryptToBytes"
+
 	ciphertext, err := base64.StdEncoding.DecodeString(encodedCiphertext)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: failed to DecodeString with error %w", op, err)
 	}
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: failed to NewCipher with error %w", op, err)
 	}
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: failed to NewGCM with error %w", op, err)
 	}
 
 	nonceSize := gcm.NonceSize()
 	if len(ciphertext) < nonceSize {
-		return nil, ErrDecryptionFailed
+		return nil, errDecryptionFailed
 	}
 
 	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
