@@ -1,4 +1,4 @@
-# Версия golangci-lint v2.0.2
+# Версия golangci-lint v2.0.1
 
 ```
 Локально должна быть создана папка **golangci-lint** 
@@ -15,9 +15,9 @@
 ```shell
 docker run --rm \
     -v $(pwd):/app \
-    -v $(pwd)/golangci-lint/.cache/golangci-lint/v2.0.2:/root/.cache \
+    -v $(pwd)/golangci-lint/.cache/golangci-lint/v2.0.1:/root/.cache \
     -w /app \
-    golangci/golangci-lint:v2.0.2 \
+    golangci/golangci-lint:v2.0.1 \
         golangci-lint run \
             -c .golangci.yml 
 ```
@@ -29,11 +29,11 @@ docker run --rm \
 Запускается из корня проекта через **PowerShell**
 
 ```shell
-docker run --rm `
+docker run --rm ` 
     -v ${pwd}:/app `
-    -v ${pwd}/golangci-lint/.cache/golangci-lint/v2.0.2:/root/.cache `
+    -v ${pwd}/golangci-lint/.cache/golangci-lint/v2.0.1:/root/.cache `
     -w /app `
-    golangci/golangci-lint:v2.0.2 `
+    golangci/golangci-lint:v2.0.1 `
         golangci-lint run `
             -c .golangci.yml 
 ```
@@ -52,4 +52,4 @@ docker run --rm `
 
 # В случае проблем с линтерами
 
-1. Попробовать обновить образ: `docker pull golangci/golangci-lint:v2.0.2` (LINUX/WSL)
+1. Попробовать обновить образ: `docker pull golangci/golangci-lint:v2.0.1` (LINUX/WSL)

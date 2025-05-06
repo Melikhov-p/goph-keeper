@@ -32,7 +32,7 @@ func main() {
 		err  error
 		conn *grpc.ClientConn
 	)
-	conn, err = grpc.Dial(serverAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err = grpc.NewClient(serverAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		fmt.Printf("did not connect: %v\n", err)
 		return

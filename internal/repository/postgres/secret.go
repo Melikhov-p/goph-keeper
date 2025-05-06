@@ -228,3 +228,42 @@ func (sr *SecretRepository) GetSecretsByName(
 
 	return secrets, nil
 }
+
+// GetAllUserSecrets получение всех секретов пользователя.
+func (sr *SecretRepository) GetAllUserSecrets(ctx context.Context, userID int) ([]*secret.Secret, error) {
+	op := "repository.Postgres.GetAllUserSecrets"
+
+	var (
+		secrets []*secret.Secret
+		rows    *sql.Rows
+		err     error
+	)
+
+	query := `
+		SELECT id, user_id, name, type, created_at, updated_at, version 
+		FROM secrets WHERE user_id = $1
+			`
+
+	rows, err = sr.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("%s: failed to query context for get all secrets with error %w", op, err)
+	}
+	defer func() {
+		_ = rows.Close()
+	}()
+
+	for rows.Next() {
+		var s secret.Secret
+		if err = rows.Scan(&s.ID, &s.UserID, &s.Name, &s.Type, &s.CreatedAt, &s.UpdatedAt, &s.Version); err != nil {
+			return nil, fmt.Errorf("%s: failed to scan row for secret with error %w", op, err)
+		}
+
+		secrets = append(secrets, &s)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("%s: got rows.Err(): %w", op, err)
+	}
+
+	return secrets, nil
+}

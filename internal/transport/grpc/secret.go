@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-	"fmt"
 
 	pb "github.com/Melikhov-p/goph-keeper/internal/api/gen"
 	"github.com/Melikhov-p/goph-keeper/internal/config"
@@ -45,6 +44,7 @@ type SecretService interface {
 		u *user.User,
 		secretName string,
 	) ([]*secret.Secret, error)
+	GetAllUserSecrets(ctx context.Context, u *user.User) ([]*secret.Secret, error)
 }
 
 // UserProvider интерфейс провайдера пользователей.
@@ -78,8 +78,6 @@ func NewSecretServer(
 
 // CreateSecret создание нового секрета.
 func (ss *SecretServer) CreateSecret(ctx context.Context, in *pb.CreateSecretRequest) (*pb.CreateSecretResponse, error) {
-	op := "transport.GRPC.Secret.Create"
-
 	var (
 		s   *secret.Secret
 		u   *user.User
@@ -138,7 +136,7 @@ func (ss *SecretServer) CreateSecret(ctx context.Context, in *pb.CreateSecretReq
 		res.Id = int64(s.ID)
 	default:
 		ss.log.Warn("invalid secret type", zap.Any("type", in.GetType()))
-		return nil, fmt.Errorf("%s: bad request: %w", op, err)
+		return nil, status.Error(codes.InvalidArgument, "invalid secret type")
 	}
 
 	return &res, nil
@@ -171,6 +169,14 @@ func (ss *SecretServer) GetSecret(ctx context.Context, in *pb.GetSecretRequest) 
 			ss.log.Debug("secrets not found", zap.Error(err))
 			return nil, status.Error(codes.NotFound, "secrets not found")
 		}
+	} else {
+		s, err = ss.secretService.GetAllUserSecrets(ctx, u)
+		if err != nil {
+			ss.log.Debug("secrets by user not found", zap.Error(err), zap.Int("UserID", u.ID))
+			return nil, status.Error(codes.NotFound, "secrets not found")
+		}
+
+		return getAllUserSecrets(s)
 	}
 
 	ss.log.Debug("found secrets", zap.Any("secrets", s))
@@ -223,6 +229,30 @@ func (ss *SecretServer) GetSecret(ctx context.Context, in *pb.GetSecretRequest) 
 		}
 
 		res.Secrets = append(res.Secrets, &foundResSecret)
+	}
+
+	return &res, nil
+}
+
+func getAllUserSecrets(secrets []*secret.Secret) (*pb.GetSecretResponse, error) {
+	var res pb.GetSecretResponse
+
+	for _, s := range secrets {
+		resSecret := pb.GetSecret{
+			Name: s.Name,
+		}
+		switch s.Type {
+		case secret.TypePassword:
+			resSecret.Type = secretTypePassword
+		case secret.TypeCard:
+			resSecret.Type = secretTypeCard
+		case secret.TypeBinary:
+			resSecret.Type = secretTypeBinary
+		default:
+			return nil, status.Error(codes.Internal, "failed to get all secrets by user")
+		}
+
+		res.Secrets = append(res.GetSecrets(), &resSecret)
 	}
 
 	return &res, nil

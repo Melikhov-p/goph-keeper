@@ -10,7 +10,6 @@ import (
 	pb "github.com/Melikhov-p/goph-keeper/internal/api/gen"
 	"github.com/Melikhov-p/goph-keeper/internal/auth"
 	"github.com/Melikhov-p/goph-keeper/internal/config"
-	contextkeys "github.com/Melikhov-p/goph-keeper/internal/context_keys"
 	"github.com/Melikhov-p/goph-keeper/internal/domain/user"
 	"github.com/Melikhov-p/goph-keeper/internal/util"
 	"go.uber.org/zap"
@@ -18,7 +17,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // UserService интерфейс сервиса пользователя.
@@ -126,20 +124,6 @@ func (us *UserServer) Login(ctx context.Context, in *pb.LoginUserRequest) (*pb.L
 	}
 
 	return &res, nil
-}
-
-// Update обновление пользователя.
-func (us *UserServer) Update(ctx context.Context, _ *pb.UpdateUserRequest) (*emptypb.Empty, error) {
-	_, ok := ctx.Value(contextkeys.UserID).(int)
-
-	var err error
-
-	if !ok {
-		err = status.Error(codes.Unauthenticated, "user unauthenticated")
-		return nil, fmt.Errorf("failed to get userID from context: %w", err)
-	}
-
-	return nil, nil
 }
 
 func addTokenToCtx(ctx context.Context, userID int, tokenSecret string, tokenTTL time.Duration) error {

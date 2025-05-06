@@ -9,7 +9,6 @@ option go_package = "/pb";
 service UserService {
   rpc Register (RegisterUserRequest) returns (RegisterUserResponse);
   rpc Login (LoginUserRequest) returns (LoginUserResponse);
-  rpc Update (UpdateUserRequest) returns (google.protobuf.Empty);
 }
 
 service SecretService {
@@ -41,13 +40,6 @@ message LoginUserRequest {
 
 message LoginUserResponse {
   User user = 1;
-}
-
-// Обновление пользователя.
-message UpdateUserRequest {
-  string new_login = 1;
-  string old_password = 2;
-  string new_password = 3;
 }
 
 

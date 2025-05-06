@@ -52,6 +52,9 @@ formatters:
 #      max-len: 120
 
 linters:
+  exclusions:
+    paths-except:
+      - ".*test.go"
   enable:
     - asasalint # checks for pass []any as any in variadic func(...any)
     - asciicheck # checks that your code does not contain non-ASCII identifiers

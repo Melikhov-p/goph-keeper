@@ -1151,6 +1151,7 @@ var (
 		(*emptypb.Empty)(nil),        // 15: google.protobuf.Empty
 	}
 )
+
 var file_internal_api_proto_gophkeeper_proto_depIdxs = []int32{
 	1,  // 0: gophkeeper.v1.RegisterUserResponse.user:type_name -> gophkeeper.v1.User
 	1,  // 1: gophkeeper.v1.LoginUserResponse.user:type_name -> gophkeeper.v1.User

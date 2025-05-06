@@ -73,6 +73,10 @@ type Secret struct {
 func NewSecret(secretName string, secretType TypeOfSecret, userID int) (*Secret, error) {
 	now := time.Now()
 
+	if secretName == "" {
+		return nil, errors.New("secret name is empty")
+	}
+
 	switch secretType {
 	case TypePassword:
 	case TypeBinary:
@@ -235,6 +239,10 @@ func NewPasswordSecret(
 		err    error
 	)
 
+	if password == "" {
+		return nil, fmt.Errorf("%s: password is empty", op)
+	}
+
 	secret, err = NewSecret(secretName, TypePassword, u.ID)
 	if err != nil {
 		return nil, fmt.Errorf("%s: failed to get secret domain model %w", op, err)
@@ -263,7 +271,7 @@ func newEmptyPasswordData() *PasswordData {
 
 func (pd *PasswordData) setMasterKey(mk []byte) {
 	pd.masterKey = mk
-	pd.baseSecretData.setMasterKey(mk)
+	pd.baseSecretData.masterKey = mk
 }
 
 func (pd *PasswordData) setDataFromRow(row *sql.Row) error {
@@ -366,7 +374,7 @@ func newEmptyCardData() *CardData {
 
 func (cd *CardData) setMasterKey(mk []byte) {
 	cd.masterKey = mk
-	cd.baseSecretData.setMasterKey(mk)
+	cd.baseSecretData.masterKey = mk
 }
 
 // NewCardSecret получение новой модели для секрета с паролем.
@@ -384,6 +392,10 @@ func NewCardSecret(
 		data   *CardData
 		err    error
 	)
+
+	if number == "" {
+		return nil, fmt.Errorf("%s: empty card number", op)
+	}
 
 	secret, err = NewSecret(secretName, TypeCard, u.ID)
 	if err != nil {
@@ -511,7 +523,7 @@ func newEmptyFileData() *FileData {
 
 func (fd *FileData) setMasterKey(mk []byte) {
 	fd.masterKey = mk
-	fd.baseSecretData.setMasterKey(mk)
+	fd.baseSecretData.masterKey = mk
 }
 
 // NewFileSecret получение новой модели для секрета с паролем.
@@ -531,6 +543,10 @@ func NewFileSecret(
 		data   *FileData
 		err    error
 	)
+
+	if len(content) == 0 {
+		return nil, fmt.Errorf("%s: empty content", op)
+	}
 
 	secret, err = NewSecret(secretName, TypeBinary, u.ID)
 	if err != nil {

@@ -148,3 +148,19 @@ func (s *Service) GetSecretsByName(
 
 	return secrets, nil
 }
+
+func (s *Service) GetAllUserSecrets(ctx context.Context, u *user.User) ([]*Secret, error) {
+	op := "domain.Secret.service.GetAllUserService"
+
+	var (
+		secrets []*Secret
+		err     error
+	)
+
+	secrets, err = s.repo.GetAllUserSecrets(ctx, u.ID)
+	if err != nil {
+		return nil, fmt.Errorf("%s: failed to get all secrets with error %w", op, err)
+	}
+
+	return secrets, nil
+}
