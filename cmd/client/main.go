@@ -55,10 +55,9 @@ func showMainMenu() {
 			fmt.Println("2. Login")
 			fmt.Println("3. Exit")
 		} else {
-			fmt.Println("\n4. Update credentials")
-			fmt.Println("5. Create secret")
-			fmt.Println("6. Get secrets")
-			fmt.Println("7. Logout")
+			fmt.Println("\n4. Create secret")
+			fmt.Println("5. Get secrets")
+			fmt.Println("6. Logout")
 		}
 
 		fmt.Print("Select an option: ")

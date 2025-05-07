@@ -30,3 +30,13 @@ go run ./cmd/keeper/main,go --config=path/to/config.yaml
 ```shell
 go test -v ./...
 ```
+
+Сначала
+```shell
+go test ((go list ./...) -notmatch "gen") -coverprofile coverage
+```  
+
+ Затем
+ ```shell
+ go tool cover -func=coverage
+ ```
