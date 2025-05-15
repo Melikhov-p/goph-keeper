@@ -1,8 +1,8 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS users (
-                       id SERIAL PRIMARY KEY,
-                       login TEXT NOT NULL UNIQUE,
+                       id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+                       login VARCHAR(250) NOT NULL UNIQUE,
                        password_hash TEXT NOT NULL,
                        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
                        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
