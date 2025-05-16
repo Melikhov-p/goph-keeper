@@ -1,0 +1,14 @@
+env: "local"
+rpc:
+  address: ":50051"
+database:
+  uri: "postgresql://goph_keeper:gophkeeper@localhost:5432/gophkeeper?sslmode=disable"
+  external_storage_path: "C:/Users/melik/GolandProjects/goph-keeper/external_store"
+  migrations_path: "C:/Users/melik/GolandProjects/goph-keeper/internal/repository/migrations"
+  max_cons: 10
+logging:
+  level: "debug"
+security:
+  pepper: "0374f7d18258c7fac9ef607686d6716a"
+  token_key: "a6176d686706fe9caf7c85281d7f4730"
+  token_ttl: 24h

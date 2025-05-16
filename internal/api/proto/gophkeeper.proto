@@ -1,0 +1,108 @@
+syntax = "proto3";
+
+package gophkeeper.v1;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "/pb";
+
+service UserService {
+  rpc Register (RegisterUserRequest) returns (RegisterUserResponse);
+  rpc Login (LoginUserRequest) returns (LoginUserResponse);
+}
+
+service SecretService {
+  rpc CreateSecret(CreateSecretRequest) returns (CreateSecretResponse);
+  rpc GetSecret(GetSecretRequest) returns (GetSecretResponse);
+}
+
+// Модель пользователя.
+message User {
+  int32 id = 1;
+  string login = 2;
+}
+
+// Регистрация пользователя.
+message RegisterUserRequest {
+  string login = 1;
+  string password = 2;
+}
+
+message RegisterUserResponse {
+  User user = 1;
+}
+
+// Аутентификация пользователя.
+message LoginUserRequest {
+  string login = 1;
+  string password = 2;
+}
+
+message LoginUserResponse {
+  User user = 1;
+}
+
+
+// Типы секретов
+enum SecretType {
+  SECRET_TYPE_PASSWORD = 0;
+  SECRET_TYPE_CARD = 1;
+  SECRET_TYPE_BINARY = 2;
+}
+
+message CreateSecretRequest {
+  string Name = 1;
+  SecretType type = 2;
+  oneof data {
+    PasswordData password_data = 3;
+    CardData card_data = 4;
+    BinaryData binary_data = 5;
+  }
+}
+
+message CreateSecretResponse {
+  int64 id = 1;
+}
+
+message GetSecretRequest {
+  optional string name = 1;
+}
+
+message GetSecret {
+  string Name = 1;
+  SecretType type = 2;
+  oneof data {
+    PasswordData password_data = 3;
+    CardData card_data = 4;
+    BinaryData binary_data = 5;
+  }
+}
+
+message GetSecretResponse {
+  repeated GetSecret secrets = 1;
+}
+
+message PasswordData {
+  string username = 1;
+  string password = 2;
+  string url = 3;
+  optional bytes meta_data = 4;
+  optional string notes = 5;
+}
+
+message CardData {
+  string Owner = 1;
+  string Number = 2;
+  string CVV = 3;
+  string ExpireDate = 4;
+  optional bytes meta_data = 5;
+  optional string notes = 6;
+}
+
+message BinaryData {
+  string filename = 1;
+  bytes content = 2;
+  optional bytes meta_data = 3;
+  optional string notes = 4;
+
+}

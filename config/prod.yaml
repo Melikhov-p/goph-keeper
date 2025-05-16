@@ -1,0 +1,2 @@
+env: "prod"
+token_ttl: 1h
